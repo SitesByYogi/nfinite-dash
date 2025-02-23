@@ -58,12 +58,18 @@ $current_date_time = date('F j, Y - g:i A T');
     <div class="dashboard-section dashboard-wp-links">
         <h2><?php echo esc_html__('WordPress Admin Links', 'nfinite-dash'); ?></h2>
         <div class="dashboard-wp-links-grid">
-            <a href="<?php echo esc_url(admin_url('plugins.php')); ?>" class="wp-admin-link"><?php echo esc_html__('Plugins', 'nfinite-dash'); ?></a>
-            <a href="<?php echo esc_url(admin_url('themes.php')); ?>" class="wp-admin-link"><?php echo esc_html__('Themes', 'nfinite-dash'); ?></a>
-            <a href="<?php echo esc_url(admin_url('options-general.php')); ?>" class="wp-admin-link"><?php echo esc_html__('Settings', 'nfinite-dash'); ?></a>
-            <a href="<?php echo esc_url(admin_url('tools.php')); ?>" class="wp-admin-link"><?php echo esc_html__('Tools', 'nfinite-dash'); ?></a>
-            <a href="<?php echo esc_url(admin_url('users.php')); ?>" class="wp-admin-link"><?php echo esc_html__('Users', 'nfinite-dash'); ?></a>
-            <a href="<?php echo esc_url(admin_url('admin.php?page=site-health')); ?>" class="wp-admin-link"><?php echo esc_html__('Site Health', 'nfinite-dash'); ?></a>
+        <a href="<?php echo admin_url('plugins.php'); ?>" class="wp-admin-link"><?php _e('Plugins', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('themes.php'); ?>" class="wp-admin-link"><?php _e('Themes', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('customize.php'); ?>" class="wp-admin-link"><?php _e('Customize', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('options-general.php'); ?>" class="wp-admin-link"><?php _e('Settings', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('tools.php'); ?>" class="wp-admin-link"><?php _e('Tools', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('users.php'); ?>" class="wp-admin-link"><?php _e('Users', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('edit.php'); ?>" class="wp-admin-link"><?php _e('Posts', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=page'); ?>" class="wp-admin-link"><?php _e('Pages', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('admin.php?page=site-health'); ?>" class="wp-admin-link"><?php _e('Site Health', 'custom-dashboard'); ?></a>
+				<a href="<?php echo admin_url('admin.php?page=snippets'); ?>" class="wp-admin-link"><?php _e('Snippets', 'custom-dashboard'); ?></a>
+                <a href="<?php echo admin_url('admin.php?page=w3tc_dashboard'); ?>" class="wp-admin-link"><?php _e('Performance', 'custom-dashboard'); ?></a>
+				<a href="<?php echo admin_url('admin.php?page=wpseo_dashboard'); ?>" class="wp-admin-link"><?php _e('SEO', 'custom-dashboard'); ?></a>
         </div>
     </div>
 </div>
