@@ -53,13 +53,6 @@ $notes = get_posts([
                     </ul>
                 <?php endif; ?>
 
-                <!-- ✅ Editable Featured Status -->
-                <label for="featured-note-<?php echo esc_attr($note_id); ?>">
-                    <input type="checkbox" class="featured-note-checkbox" id="featured-note-<?php echo esc_attr($note_id); ?>"
-                           data-note-id="<?php echo esc_attr($note_id); ?>" value="1" <?php checked($is_featured, '1'); ?> />
-                    <?php _e('Mark as Featured', 'nfinite-dash'); ?>
-                </label>
-
                 <div class="note-actions">
                     <a href="<?php echo get_edit_post_link($note_id); ?>" class="button button-secondary">
                         <?php _e('Edit Note', 'nfinite-dash'); ?>
@@ -76,6 +69,7 @@ $notes = get_posts([
     <a href="<?php echo admin_url('post-new.php?post_type=my_notes'); ?>" class="button button-primary"><?php _e('Add New Note', 'nfinite-dash'); ?></a>
     <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="button"><?php _e('View All Notes', 'nfinite-dash'); ?></a>
 </div>
+
 
 <!-- ✅ JavaScript for AJAX Inline Editing -->
 <script>
