@@ -73,7 +73,7 @@ class Nfinite_Dash_Meetings_CPT {
     }
 
     /**
-     * ✅ Add Meta Boxes for Meetings (Start & End Time)
+     * ✅ Add Meta Boxes for Meetings (Date, Time, Link, Status, Type)
      */
     public function add_meeting_meta_boxes() {
         add_meta_box(
@@ -87,12 +87,14 @@ class Nfinite_Dash_Meetings_CPT {
     }
 
     /**
-     * ✅ Meeting Meta Box Callback (Start & End Time)
+     * ✅ Meeting Meta Box Callback (Date, Time, Link, Status, Type)
      */
     public function meeting_meta_box_callback($post) {
-        $meeting_date     = get_post_meta($post->ID, '_meeting_date', true);
-        $meeting_time     = get_post_meta($post->ID, '_meeting_time', true);
-        $meeting_end_time = get_post_meta($post->ID, '_meeting_end_time', true);
+        $meeting_date   = get_post_meta($post->ID, '_meeting_date', true);
+        $meeting_time   = get_post_meta($post->ID, '_meeting_time', true);
+        $meeting_status = get_post_meta($post->ID, '_meeting_status', true) ?: 'pending';
+        $meeting_link   = get_post_meta($post->ID, '_meeting_link', true);
+        $meeting_type   = get_post_meta($post->ID, '_meeting_type', true) ?: 'google_meet';
 
         wp_nonce_field('meeting_save_meta_box_data', 'meeting_meta_box_nonce');
 
@@ -102,35 +104,53 @@ class Nfinite_Dash_Meetings_CPT {
             <input type="date" name="meeting_date" id="meeting_date" value="<?php echo esc_attr($meeting_date); ?>" />
         </p>
         <p>
-            <label for="meeting_time"><?php _e('Start Time:', 'nfinite-dash'); ?></label>
+            <label for="meeting_time"><?php _e('Meeting Time:', 'nfinite-dash'); ?></label>
             <input type="time" name="meeting_time" id="meeting_time" value="<?php echo esc_attr($meeting_time); ?>" />
         </p>
         <p>
-            <label for="meeting_end_time"><?php _e('End Time:', 'nfinite-dash'); ?></label>
-            <input type="time" name="meeting_end_time" id="meeting_end_time" value="<?php echo esc_attr($meeting_end_time); ?>" />
+            <label for="meeting_status"><?php _e('Meeting Status:', 'nfinite-dash'); ?></label>
+            <select name="meeting_status" id="meeting_status">
+                <option value="pending" <?php selected($meeting_status, 'pending'); ?>>Pending</option>
+                <option value="completed" <?php selected($meeting_status, 'completed'); ?>>Completed</option>
+                <option value="canceled" <?php selected($meeting_status, 'canceled'); ?>>Canceled</option>
+            </select>
+        </p>
+        <p>
+            <label for="meeting_link"><?php _e('Meeting Link:', 'nfinite-dash'); ?></label>
+            <input type="url" name="meeting_link" id="meeting_link" value="<?php echo esc_attr($meeting_link); ?>" placeholder="https://example.com/meet" />
+        </p>
+        <p>
+            <label for="meeting_type"><?php _e('Meeting Type:', 'nfinite-dash'); ?></label>
+            <select name="meeting_type" id="meeting_type">
+                <option value="google_meet" <?php selected($meeting_type, 'google_meet'); ?>>Google Meet</option>
+                <option value="zoom" <?php selected($meeting_type, 'zoom'); ?>>Zoom</option>
+                <option value="microsoft_teams" <?php selected($meeting_type, 'microsoft_teams'); ?>>Microsoft Teams</option>
+            </select>
         </p>
         <?php
     }
 
+
     /**
-     * ✅ Save Meeting Meta Box Data (Including End Time)
+     * ✅ Save Meeting Meta Box Data
      */
     public function save_meeting_meta_box_data($post_id) {
-        if (!isset($_POST['meeting_meta_box_nonce']) ||
-            !wp_verify_nonce($_POST['meeting_meta_box_nonce'], 'meeting_save_meta_box_data')) {
+        if (!isset($_POST['meeting_meta_box_nonce']) || !wp_verify_nonce($_POST['meeting_meta_box_nonce'], 'meeting_save_meta_box_data')) {
             return;
         }
 
-        if (isset($_POST['meeting_date'])) {
-            update_post_meta($post_id, '_meeting_date', sanitize_text_field($_POST['meeting_date']));
-        }
+        $fields = [
+            '_meeting_date'   => 'sanitize_text_field',
+            '_meeting_time'   => 'sanitize_text_field',
+            '_meeting_status' => 'sanitize_text_field',
+            '_meeting_link'   => 'esc_url_raw',
+            '_meeting_type'   => 'sanitize_text_field',
+        ];
 
-        if (isset($_POST['meeting_time'])) {
-            update_post_meta($post_id, '_meeting_time', sanitize_text_field($_POST['meeting_time']));
-        }
-
-        if (isset($_POST['meeting_end_time'])) {
-            update_post_meta($post_id, '_meeting_end_time', sanitize_text_field($_POST['meeting_end_time']));
+        foreach ($fields as $field => $sanitizer) {
+            if (isset($_POST[ltrim($field, '_')])) {
+                update_post_meta($post_id, $field, call_user_func($sanitizer, $_POST[ltrim($field, '_')]));
+            }
         }
     }
 
@@ -181,10 +201,11 @@ public function filter_upcoming_meetings($query) {
      * ✅ Add Custom Columns to Meetings Admin Table
      */
     public function add_meeting_columns($columns) {
-        unset($columns['date']); // Remove default Date column
+        unset($columns['date']);
         $columns['meeting_date'] = __('Meeting Date', 'nfinite-dash');
         $columns['meeting_time'] = __('Meeting Time', 'nfinite-dash');
-        $columns['meet_link']    = __('Meet Link', 'nfinite-dash');
+        $columns['meeting_status'] = __('Status', 'nfinite-dash');
+        $columns['meeting_link'] = __('Join Link', 'nfinite-dash');
         return $columns;
     }
 
@@ -192,16 +213,11 @@ public function filter_upcoming_meetings($query) {
      * ✅ Populate Custom Columns
      */
     public function populate_meeting_columns($column, $post_id) {
-        if ($column === 'meeting_date') {
-            echo esc_html(get_post_meta($post_id, '_meeting_date', true));
-        }
-        if ($column === 'meeting_time') {
-            $time = get_post_meta($post_id, '_meeting_time', true);
-            echo $time ? date('g:i A', strtotime($time)) : __('N/A', 'nfinite-dash');
-        }
-        if ($column === 'meet_link') {
-            $meet_link = get_post_meta($post_id, '_meeting_link', true);
-            echo $meet_link ? '<a href="' . esc_url($meet_link) . '" target="_blank">Join Now</a>' : __('N/A', 'nfinite-dash');
+        $meta_value = get_post_meta($post_id, '_' . $column, true);
+        if ($column === 'meeting_link') {
+            echo $meta_value ? '<a href="' . esc_url($meta_value) . '" target="_blank">Join Now</a>' : __('N/A', 'nfinite-dash');
+        } else {
+            echo esc_html($meta_value);
         }
     }
 }

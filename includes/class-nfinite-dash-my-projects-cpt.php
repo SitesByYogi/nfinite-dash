@@ -124,8 +124,7 @@ class Nfinite_Dash_My_Projects_CPT {
      * ✅ Project Links Meta Box Callback (Similar to My Notes Links)
      */
     public function project_links_meta_box_callback($post) {
-        $project_links = get_post_meta($post->ID, '_project_links', true) ?: [];
-
+        $project_links = get_post_meta($post->ID, '_my_project_links', true) ?: [];
         wp_nonce_field('save_project_links_nonce', 'project_links_nonce');
         ?>
         <div id="project-links-container">
@@ -184,7 +183,7 @@ class Nfinite_Dash_My_Projects_CPT {
                 }
             }
         }
-        update_post_meta($post_id, '_project_links', $links);
+        update_post_meta($post_id, '_my_project_links', $links);
     }
 
    /**
@@ -232,7 +231,7 @@ public function populate_project_columns($column, $post_id) {
     }
 
     if ($column === 'project_links') {
-        $links = get_post_meta($post_id, '_project_links', true);
+        $links = get_post_meta($post_id, '_my_project_links', true); // ✅ Use $post_id instead of $project_id
         if (!empty($links)) {
             echo '<ul>';
             foreach ($links as $link) {

@@ -38,48 +38,70 @@
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* ✅ Date & Time - Modernized */
-.dashboard-date-time {
-    text-align: center;
-    padding: 12px;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.08);
-    font-weight: bold;
-    font-size: 18px;
-    color: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dashboard-date-time::before {
-    content: "📅 ";
-    font-size: 20px;
-    margin-right: 8px;
-}
-
 /* ✅ WordPress Admin Links Section */
 .dashboard-wp-links {
     margin-top: 30px;
     padding: 20px;
     background: #ffffff;
     border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
 }
 
 .dashboard-wp-links h2 {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
-    color: #444;
+    color: #222;
     margin-bottom: 15px;
+    text-transform: uppercase;
 }
 
+/* ✅ Grid Layout */
 .dashboard-wp-links-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    justify-items: center;
 }
+
+/* ✅ Admin Links Styling */
+.wp-admin-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    width: 100%;
+    max-width: 180px;
+    background: linear-gradient(135deg, #0073aa, #005177);
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+}
+
+.wp-admin-link:hover {
+    background: linear-gradient(135deg, #005177, #003b5c);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* ✅ Responsive Adjustments */
+@media (max-width: 768px) {
+    .dashboard-wp-links-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-wp-links-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 .wp-admin-link {
     display: block;

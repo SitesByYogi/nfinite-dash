@@ -95,12 +95,20 @@ class Nfinite_Dash_Client_Relationships {
         if ($column === 'assigned_client') {
             $client_id = get_post_meta($post_id, '_assigned_client', true);
             if ($client_id) {
-                echo '<a href="' . esc_url(get_edit_post_link($client_id)) . '">' . get_the_title($client_id) . '</a>';
+                $client_name = trim(preg_replace('/^\d+/', '', get_the_title($client_id))); // Remove any leading numbers
+                $client_link = get_edit_post_link($client_id);
+    
+                if ($client_name && $client_link) {
+                    echo '<a href="' . esc_url($client_link) . '">' . esc_html($client_name) . '</a>';
+                } else {
+                    echo __('None', 'nfinite-dash');
+                }
             } else {
                 echo __('None', 'nfinite-dash');
             }
         }
     }
+    
 
     /**
      * ✅ AJAX Search for Clients
