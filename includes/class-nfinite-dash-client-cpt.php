@@ -15,6 +15,8 @@ class Nfinite_Dash_Client_CPT {
         add_action('init', array($this, 'register_post_type'));
         add_action('add_meta_boxes', array($this, 'add_meta_boxes'));
         add_action('save_post', array($this, 'save_meta_box_data'));
+        add_action('add_meta_boxes', array($this, 'add_client_notes_meta_box'));
+        add_action('save_post', array($this, 'save_client_notes_meta_box_data'));
     
         // ✅ Custom Columns in Client List
         add_filter('manage_client_posts_columns', array($this, 'add_custom_columns'));
@@ -105,6 +107,75 @@ class Nfinite_Dash_Client_CPT {
             echo '<input type="url" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '" size="50" /><br>';
         }
     }
+
+    /**
+ * ✅ Add Client Notes Meta Box.
+ */
+public function add_client_notes_meta_box() {
+    add_meta_box(
+        'client_notes',
+        __('Client Notes', 'nfinite-dash'),
+        array($this, 'client_notes_meta_box_callback'),
+        'client',
+        'normal',
+        'high'
+    );
+}
+
+/**
+ * ✅ Callback function to display the Client Notes Meta Box.
+ */
+public function client_notes_meta_box_callback($post) {
+    // Use nonce for security verification
+    wp_nonce_field('client_notes_save_meta_box_data', 'client_notes_meta_box_nonce');
+
+    // Retrieve existing value from the database
+    $client_notes = get_post_meta($post->ID, '_client_notes', true);
+
+    echo '<label for="client_notes">';
+    _e('Add your client notes here:', 'nfinite-dash');
+    echo '</label><br>';
+    echo '<textarea id="client_notes" name="client_notes" rows="5" style="width:100%;">' . esc_textarea($client_notes) . '</textarea>';
+}
+
+/**
+ * ✅ Save Client Notes Meta Box Data.
+ */
+public function save_client_notes_meta_box_data($post_id) {
+    // Verify if our nonce is set
+    if (!isset($_POST['client_notes_meta_box_nonce'])) {
+        return;
+    }
+
+    // Verify that the nonce is valid
+    if (!wp_verify_nonce($_POST['client_notes_meta_box_nonce'], 'client_notes_save_meta_box_data')) {
+        return;
+    }
+
+    // Check if it's an autosave. If so, do nothing
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    // Check the user's permissions
+    if (isset($_POST['post_type']) && 'client' == $_POST['post_type']) {
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+    }
+
+    // Make sure data is set
+    if (!isset($_POST['client_notes'])) {
+        return;
+    }
+
+    // Sanitize user input
+    $client_notes = sanitize_textarea_field($_POST['client_notes']);
+
+    // Update the meta field in the database
+    update_post_meta($post_id, '_client_notes', $client_notes);
+}
+
 
     /**
      * ✅ Meta Box Callback for Assigned Tasks, Meetings & Notes.
