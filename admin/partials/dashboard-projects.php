@@ -22,7 +22,6 @@ $projects = get_posts([
         <?php foreach ($projects as $project): 
             $project_id  = $project->ID;
             $status      = get_post_meta($project_id, '_my_project_status', true);
-            $priority    = get_post_meta($project_id, '_my_project_priority', true);
             $links       = get_post_meta($project_id, '_my_project_links', true);
             ?>
 
@@ -38,15 +37,6 @@ $projects = get_posts([
                         <option value="not_started" <?php selected($status, 'not_started'); ?>>Not Started</option>
                         <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
                         <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
-                    </select>
-                </p>
-
-                <p><strong><?php _e('Priority:', 'nfinite-dash'); ?></strong>
-                    <select class="project-priority-dropdown" data-project-id="<?php echo esc_attr($project_id); ?>">
-                        <option value="low" <?php selected($priority, 'low'); ?>>Low</option>
-                        <option value="medium" <?php selected($priority, 'medium'); ?>>Medium</option>
-                        <option value="high" <?php selected($priority, 'high'); ?>>High</option>
-                        <option value="urgent" <?php selected($priority, 'urgent'); ?>>Urgent</option>
                     </select>
                 </p>
 
@@ -79,7 +69,7 @@ $projects = get_posts([
     <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="button"><?php _e('View All Projects', 'nfinite-dash'); ?></a>
 </div>
 
-<!-- ✅ JavaScript for AJAX Inline Editing -->
+<!-- ✅ JavaScript for AJAX Inline Editing (Priority Removed) -->
 <script>
 jQuery(document).ready(function ($) {
     function updateProjectMeta(projectId, metaKey, metaValue) {
@@ -106,12 +96,11 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    $('.project-status-dropdown, .project-priority-dropdown').on('change', function () {
+    $('.project-status-dropdown').on('change', function () {
         var projectId = $(this).data('project-id');
-        var metaKey = $(this).hasClass('project-status-dropdown') ? '_my_project_status' : '_my_project_priority';
+        var metaKey = '_my_project_status';
         var metaValue = $(this).val();
         updateProjectMeta(projectId, metaKey, metaValue);
     });
 });
 </script>
-

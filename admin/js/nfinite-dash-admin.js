@@ -1,32 +1,64 @@
-(function( $ ) {
-	'use strict';
+(function ($) {
+    'use strict';
 
-	/**
-	 * All of the code for your admin-facing JavaScript source
-	 * should reside in this file.
-	 *
-	 * Note: It has been assumed you will write jQuery code here, so the
-	 * $ function reference has been prepared for usage within the scope
-	 * of this function.
-	 *
-	 * This enables you to define handlers, for when the DOM is ready:
-	 *
-	 * $(function() {
-	 *
-	 * });
-	 *
-	 * When the window is loaded:
-	 *
-	 * $( window ).load(function() {
-	 *
-	 * });
-	 *
-	 * ...and/or other possibilities.
-	 *
-	 * Ideally, it is not considered best practise to attach more than a
-	 * single DOM-ready or window-load handler for a particular page.
-	 * Although scripts in the WordPress core, Plugins and Themes may be
-	 * practising this, we should strive to set a better example in our own work.
-	 */
+    $(document).ready(function () {
+        // ✅ Handle Status & Priority Dropdown Changes for Tasks
+        $('.task-meta-dropdown').change(function () {
+            var postID = $(this).data('task-id');
+            var metaKey = $(this).data('meta-key');
+            var metaValue = $(this).val();
 
-})( jQuery );
+            $.ajax({
+                url: taskManagerAjax.ajax_url, // ✅ WordPress AJAX URL
+                type: 'POST',
+                data: {
+                    action: 'task_manager_update_meta',
+                    _ajax_nonce: taskManagerAjax.nonce, // ✅ Security nonce
+                    post_id: postID,
+                    meta_key: metaKey,
+                    meta_value: metaValue
+                },
+                success: function (response) {
+                    if (response.success) {
+                        console.log("Task updated successfully.");
+                    } else {
+                        console.log("Failed to update task.");
+                    }
+                },
+                error: function () {
+                    console.log("AJAX error: Unable to update task.");
+                }
+            });
+        });
+
+        // ✅ Handle Status & Priority Dropdown Changes for My Projects
+        $('.project-meta-dropdown').change(function () {
+            var postID = $(this).data('project-id');
+            var metaKey = $(this).data('meta-key');
+            var metaValue = $(this).val();
+
+            $.ajax({
+                url: myProjectsAjax.ajax_url, // ✅ WordPress AJAX URL
+                type: 'POST',
+                data: {
+                    action: 'my_projects_update_meta',
+                    _ajax_nonce: myProjectsAjax.nonce, // ✅ Security nonce
+                    post_id: postID,
+                    meta_key: metaKey,
+                    meta_value: metaValue
+                },
+                success: function (response) {
+                    if (response.success) {
+                        console.log("Project updated successfully.");
+                    } else {
+                        console.log("Failed to update project.");
+                    }
+                },
+                error: function () {
+                    console.log("AJAX error: Unable to update project.");
+                }
+            });
+        });
+    });
+
+})(jQuery);

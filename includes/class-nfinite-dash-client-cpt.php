@@ -15,11 +15,23 @@ class Nfinite_Dash_Client_CPT {
         add_action('init', array($this, 'register_post_type'));
         add_action('add_meta_boxes', array($this, 'add_meta_boxes'));
         add_action('save_post', array($this, 'save_meta_box_data'));
-
+    
         // ✅ Custom Columns in Client List
         add_filter('manage_client_posts_columns', array($this, 'add_custom_columns'));
         add_action('manage_client_posts_custom_column', array($this, 'custom_column_content'), 10, 2);
+        
+        // ✅ Remove Published Date Column
+        add_filter('manage_edit-client_columns', array($this, 'remove_unwanted_columns'));
     }
+    
+    /**
+     * ✅ Remove Published Date Column from Client List Table.
+     */
+    public function remove_unwanted_columns($columns) {
+        unset($columns['date']); // Removes the Published Date column
+        return $columns;
+    }
+    
 
     /**
      * ✅ Register the Client CPT.
@@ -40,15 +52,15 @@ class Nfinite_Dash_Client_CPT {
 
         $args = array(
             'labels'      => $labels,
-            'public'      => true,  // ✅ Ensure it's visible in admin
+            'public'      => true,
             'show_ui'     => true,
             'menu_icon'   => 'dashicons-businessman',
             'supports'    => array( 'title', 'editor' ),
-            'has_archive' => true, // ✅ Allow archives
-            'rewrite'     => array( 'slug' => 'clients' ), // ✅ Friendly URL
+            'has_archive' => true,
+            'rewrite'     => array( 'slug' => 'clients' ),
         );
 
-        register_post_type( 'client', $args ); // ✅ Correct Post Type Name
+        register_post_type( 'client', $args );
     }
 
     /**
@@ -59,18 +71,29 @@ class Nfinite_Dash_Client_CPT {
             'client_details',
             __( 'Client Details', 'nfinite-dash' ),
             array($this, 'meta_box_callback'),
-            'client', // ✅ Correct Post Type Name
+            'client',
+            'normal',
+            'high'
+        );
+
+        // ✅ Add back Assigned Items Box
+        add_meta_box(
+            'client_assigned_items',
+            __( 'Assigned Tasks, Meetings & Notes', 'nfinite-dash' ),
+            array($this, 'assigned_items_meta_box'),
+            'client',
             'normal',
             'high'
         );
     }
 
     /**
-     * ✅ Meta Box Callback.
+     * ✅ Meta Box Callback for Client Details.
      */
     public function meta_box_callback($post) {
         $meta_fields = array(
             '_client_admin_link' => __( 'Admin Dashboard Link', 'nfinite-dash' ),
+            '_client_home_url'   => __( 'Website Home URL', 'nfinite-dash' ),
         );
 
         // Security nonce
@@ -84,6 +107,20 @@ class Nfinite_Dash_Client_CPT {
     }
 
     /**
+     * ✅ Meta Box Callback for Assigned Tasks, Meetings & Notes.
+     */
+    public function assigned_items_meta_box($post) {
+        echo '<h3>' . __('Assigned Tasks', 'nfinite-dash') . '</h3>';
+        $this->display_assigned_posts('task_manager_task', $post->ID);
+
+        echo '<h3>' . __('Assigned Meetings', 'nfinite-dash') . '</h3>';
+        $this->display_assigned_posts('meetings', $post->ID);
+
+        echo '<h3>' . __('Client Notes', 'nfinite-dash') . '</h3>';
+        $this->display_assigned_posts('my_notes', $post->ID);
+    }
+
+    /**
      * ✅ Save Meta Box Data.
      */
     public function save_meta_box_data($post_id) {
@@ -92,8 +129,10 @@ class Nfinite_Dash_Client_CPT {
             return;
         }
 
-        if (isset($_POST['_client_admin_link'])) {
-            update_post_meta($post_id, '_client_admin_link', esc_url($_POST['_client_admin_link']));
+        foreach (['_client_admin_link', '_client_home_url'] as $meta_key) {
+            if (isset($_POST[$meta_key])) {
+                update_post_meta($post_id, $meta_key, esc_url($_POST[$meta_key]));
+            }
         }
     }
 
@@ -102,6 +141,7 @@ class Nfinite_Dash_Client_CPT {
      */
     public function add_custom_columns($columns) {
         $columns['website_admin_link'] = __( 'Admin Dashboard', 'nfinite-dash' );
+        $columns['website_home_url'] = __( 'Website Home URL', 'nfinite-dash' );
         $columns['client_tasks'] = __( 'Assigned Tasks', 'nfinite-dash' );
         $columns['client_meetings'] = __( 'Assigned Meetings', 'nfinite-dash' );
         return $columns;
@@ -117,55 +157,51 @@ class Nfinite_Dash_Client_CPT {
                 echo $admin_link ? "<a href='" . esc_url($admin_link) . "' target='_blank'>Admin Dashboard</a>" : __('No Admin Link', 'nfinite-dash');
                 break;
 
+            case 'website_home_url':
+                $home_url = get_post_meta($post_id, '_client_home_url', true);
+                echo $home_url ? "<a href='" . esc_url($home_url) . "' target='_blank'>View Site</a>" : __('No Home URL', 'nfinite-dash');
+                break;
+
             case 'client_tasks':
-                $this->display_assigned_posts('nfinite_tasks', $post_id);
+                $this->display_assigned_posts('task_manager_task', $post_id);
                 break;
 
             case 'client_meetings':
                 $this->display_assigned_posts('meetings', $post_id);
                 break;
+
+            case 'client_notes':
+                $this->display_assigned_posts('my_notes', $post_id);
+                break;
         }
     }
 
     /**
-     * ✅ Display Assigned Tasks and Meetings (Fixed Duplicate Issue).
+     * ✅ Display Assigned Tasks, Meetings, or Notes.
      */
     public function display_assigned_posts($post_type, $client_id) {
-        if (empty($client_id)) {
-            echo __('No assigned items', 'nfinite-dash');
-            return;
-        }
-
-        // ✅ Query tasks/meetings assigned to this client
-        $args = array(
+        $query = new WP_Query([
             'post_type'      => $post_type,
-            'posts_per_page' => -1, // Fetch all
-            'meta_query'     => array(
-                array(
+            'posts_per_page' => -1,
+            'meta_query'     => [
+                [
                     'key'     => '_assigned_client',
                     'value'   => $client_id,
                     'compare' => '='
-                )
-            ),
-            'fields' => 'ids', // ✅ Fetch only post IDs for efficiency
-        );
+                ]
+            ],
+            'fields' => 'ids',
+        ]);
 
-        $query = new WP_Query($args);
-        
-        // ✅ Remove duplicates if any
-        $post_ids = array_unique($query->posts); 
-
-        if (!empty($post_ids)) {
+        if ($query->have_posts()) {
             echo '<ul>';
-            foreach ($post_ids as $post_id) {
+            foreach ($query->posts as $post_id) {
                 echo '<li><a href="' . esc_url(get_edit_post_link($post_id)) . '">' . esc_html(get_the_title($post_id)) . '</a></li>';
             }
             echo '</ul>';
         } else {
             echo __('No assigned items', 'nfinite-dash');
         }
-
-        // ✅ Reset Post Data (Best Practice)
         wp_reset_postdata();
     }
 }

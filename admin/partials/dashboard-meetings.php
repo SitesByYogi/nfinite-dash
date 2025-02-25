@@ -78,14 +78,6 @@ $meetings = get_posts([
                     <p class="no-meeting-link"><?php _e('No meeting link available.', 'nfinite-dash'); ?></p>
                 <?php endif; ?>
 
-                <!-- ✅ Editable Meeting Status -->
-                <label for="meeting-status-<?php echo esc_attr($meeting_id); ?>"><?php _e('Update Status:', 'nfinite-dash'); ?></label>
-                <select class="meeting-status-dropdown" id="meeting-status-<?php echo esc_attr($meeting_id); ?>" data-meeting-id="<?php echo esc_attr($meeting_id); ?>">
-                    <option value="pending" <?php selected($meeting_status, 'pending'); ?>>Pending</option>
-                    <option value="completed" <?php selected($meeting_status, 'completed'); ?>>Completed</option>
-                    <option value="canceled" <?php selected($meeting_status, 'canceled'); ?>>Canceled</option>
-                </select>
-
                 <div class="meeting-actions">
                     <a href="<?php echo get_edit_post_link($meeting_id); ?>" class="button button-secondary">
                         <?php _e('Edit Meeting', 'nfinite-dash'); ?>
