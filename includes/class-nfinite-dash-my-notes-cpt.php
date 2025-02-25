@@ -37,7 +37,7 @@ if (!class_exists('Nfinite_Dash_My_Notes_CPT')) { // ✅ Prevent duplicate decla
 
             $args = array(
                 'labels'        => $labels,
-                'public'        => true,
+                'public'        => false,
                 'show_ui'       => true,
                 'show_in_menu'  => 'admin.php?page=nfinite-dash',
                 'menu_icon'     => 'dashicons-sticky',

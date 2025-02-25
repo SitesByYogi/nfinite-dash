@@ -9,6 +9,7 @@ class Nfinite_Dash_Task_CPT {
 
     public function __construct() {
         add_action('init', array($this, 'register_post_type'));
+        add_action('init', array($this, 'register_taxonomies')); // ✅ Register Categories & Tags
         add_action('add_meta_boxes', array($this, 'add_task_meta_boxes'));
         add_action('save_post', array($this, 'save_task_meta_box_data'));
 
@@ -45,8 +46,44 @@ class Nfinite_Dash_Task_CPT {
             'show_ui'     => true,
             'menu_icon'   => 'dashicons-list-view',
             'supports'    => array('title', 'editor'),
+            'taxonomies'  => array('task_category', 'task_tag'), // ✅ Attach Taxonomies
         );
         register_post_type('task_manager_task', $args);
+    }
+
+    /**
+     * ✅ Register Categories & Tags for Tasks
+     */
+    public function register_taxonomies() {
+        // ✅ Task Categories (Hierarchical)
+        register_taxonomy('task_category', 'task_manager_task', array(
+            'labels'       => array(
+                'name'          => __('Task Categories', 'task-manager'),
+                'singular_name' => __('Task Category', 'task-manager'),
+                'add_new_item'  => __('Add New Task Category', 'task-manager'),
+                'edit_item'     => __('Edit Task Category', 'task-manager'),
+            ),
+            'hierarchical' => true,
+            'show_ui'      => true,
+            'show_admin_column' => true,
+            'query_var'    => true,
+            'rewrite'      => array('slug' => 'task-category'),
+        ));
+
+        // ✅ Task Tags (Non-Hierarchical)
+        register_taxonomy('task_tag', 'task_manager_task', array(
+            'labels'       => array(
+                'name'          => __('Task Tags', 'task-manager'),
+                'singular_name' => __('Task Tag', 'task-manager'),
+                'add_new_item'  => __('Add New Task Tag', 'task-manager'),
+                'edit_item'     => __('Edit Task Tag', 'task-manager'),
+            ),
+            'hierarchical' => false,
+            'show_ui'      => true,
+            'show_admin_column' => true,
+            'query_var'    => true,
+            'rewrite'      => array('slug' => 'task-tag'),
+        ));
     }
 
     /**

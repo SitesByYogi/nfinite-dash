@@ -27,35 +27,34 @@ $meetings = get_posts([
 ?>
 
 <div class="dashboard-meetings-grid">
-    <?php if (!empty($meetings)) : ?>
-        <?php foreach ($meetings as $meeting) : 
-            $meeting_id    = $meeting->ID;
-            $meeting_date  = get_post_meta($meeting_id, '_meeting_date', true) ?: __('No Date Set', 'nfinite-dash');
-            $meeting_time  = get_post_meta($meeting_id, '_meeting_time', true) ?: __('No Time Set', 'nfinite-dash');
-            $meeting_link  = get_post_meta($meeting_id, '_meeting_link', true);
-            $meeting_type  = get_post_meta($meeting_id, '_meeting_type', true) ?: 'other';
-            $meeting_status = get_post_meta($meeting_id, '_meeting_status', true) ?: 'pending';
+    <?php 
+    $current_time = current_time('Y-m-d H:i:s'); // Get the current time in WP timezone
+    $valid_meetings = [];
 
-            // Convert meeting type to readable format
-            switch ($meeting_type) {
-                case 'google_meet': 
-                    $meeting_type_label = 'Google Meet'; 
-                    break;
-                case 'zoom': 
-                    $meeting_type_label = 'Zoom'; 
-                    break;
-                case 'microsoft_teams': 
-                    $meeting_type_label = 'Microsoft Teams'; 
-                    break;
-                default: 
-                    $meeting_type_label = 'Other'; 
-                    break;
-            }
+    if (!empty($meetings)) :
+        foreach ($meetings as $meeting) :
+            $meeting_id       = $meeting->ID;
+            $meeting_date     = get_post_meta($meeting_id, '_meeting_date', true) ?: __('No Date Set', 'nfinite-dash');
+            $meeting_time     = get_post_meta($meeting_id, '_meeting_time', true) ?: __('No Start Time', 'nfinite-dash');
+            $meeting_end_time = get_post_meta($meeting_id, '_meeting_end_time', true) ?: __('No End Time', 'nfinite-dash');
+            $meeting_link     = get_post_meta($meeting_id, '_meeting_link', true);
+            $meeting_type     = get_post_meta($meeting_id, '_meeting_type', true) ?: 'other';
+            $meeting_status   = get_post_meta($meeting_id, '_meeting_status', true) ?: 'pending';
 
             // Convert time format to 12-hour AM/PM
-            $formatted_time = strtotime($meeting_time) ? date('g:i A', strtotime($meeting_time)) : __('No Time Set', 'nfinite-dash');
+            $formatted_start_time = strtotime($meeting_time) ? date('g:i A', strtotime($meeting_time)) : __('No Start Time', 'nfinite-dash');
+            $formatted_end_time   = strtotime($meeting_end_time) ? date('g:i A', strtotime($meeting_end_time)) : __('No End Time', 'nfinite-dash');
 
-            ?>
+            // Convert end time to full datetime format for comparison
+            $meeting_end_datetime = strtotime("{$meeting_date} {$meeting_end_time}");
+
+            // Skip meeting if its end time has passed
+            if ($meeting_end_datetime && $meeting_end_datetime < strtotime($current_time)) {
+                continue;
+            }
+
+            $valid_meetings[] = $meeting; // Store valid meetings
+    ?>
             <div class="meeting-card">
                 <h3 class="meeting-title">
                     <a href="<?php echo get_edit_post_link($meeting_id); ?>">
@@ -64,8 +63,8 @@ $meetings = get_posts([
                 </h3>
 
                 <p><strong><?php _e('Date:', 'nfinite-dash'); ?></strong> <?php echo esc_html($meeting_date); ?></p>
-                <p><strong><?php _e('Time:', 'nfinite-dash'); ?></strong> <?php echo esc_html($formatted_time); ?></p>
-                <p><strong><?php _e('Type:', 'nfinite-dash'); ?></strong> <?php echo esc_html($meeting_type_label); ?></p>
+                <p><strong><?php _e('Start Time:', 'nfinite-dash'); ?></strong> <?php echo esc_html($formatted_start_time); ?></p>
+                <p><strong><?php _e('End Time:', 'nfinite-dash'); ?></strong> <?php echo esc_html($formatted_end_time); ?></p>
                 <p><strong><?php _e('Status:', 'nfinite-dash'); ?></strong> <?php echo esc_html(ucfirst($meeting_status)); ?></p>
 
                 <?php if ($meeting_link) : ?>
@@ -84,13 +83,20 @@ $meetings = get_posts([
                     </a>
                 </div>
             </div>
-        <?php endforeach; ?>
-    <?php else: ?>
+    <?php endforeach; ?>
+    <?php endif; ?>
+
+    <?php if (empty($valid_meetings)) : ?>
         <p><?php _e('No upcoming meetings.', 'nfinite-dash'); ?></p>
     <?php endif; ?>
 </div>
 
+<!-- ✅ Add New Meeting & View All Meetings Buttons -->
 <div class="meetings-buttons">
-    <a href="<?php echo admin_url('post-new.php?post_type=meetings'); ?>" class="button button-primary"><?php _e('Add New Meeting', 'nfinite-dash'); ?></a>
-    <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="button"><?php _e('View All Meetings', 'nfinite-dash'); ?></a>
+    <a href="<?php echo admin_url('post-new.php?post_type=meetings'); ?>" class="button button-primary">
+        <?php _e('Add New Meeting', 'nfinite-dash'); ?>
+    </a>
+    <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="button">
+        <?php _e('View All Meetings', 'nfinite-dash'); ?>
+    </a>
 </div>
