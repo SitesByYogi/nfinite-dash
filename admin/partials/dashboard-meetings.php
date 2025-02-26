@@ -25,9 +25,21 @@ $meetings = get_posts([
 ]);
 
 ?>
-
-<div class="dashboard-meetings-grid">
-    <?php 
+    <div class="nfinite-calendar-wrapper">
+    <h2 class="nfinite-calendar-title">📅 Upcoming Meetings Calendar</h2>
+    <iframe 
+    class="nfinite-calendar"
+    src="https://calendar.google.com/calendar/embed?src=bc%40qckbot.com&ctz=America%2FNew_York"
+    style="border: 0;" 
+    width="100%" 
+    height="600" 
+    frameborder="0" 
+    scrolling="no">
+</iframe>
+</div>
+    <div class="dashboard-meetings-grid">
+      <?php 
+      /*
     $current_time = current_time('Y-m-d H:i:s'); // Get the current time in WP timezone
     $valid_meetings = [];
 
@@ -100,3 +112,5 @@ $meetings = get_posts([
         <?php _e('View All Meetings', 'nfinite-dash'); ?>
     </a>
 </div>
+
+*/

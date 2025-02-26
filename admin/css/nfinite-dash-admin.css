@@ -1,17 +1,14 @@
 /**
- * All of the CSS for your admin-specific functionality should be
- * included in this file.
+ * ✅ General Dashboard Styling
  */
-
- /* ✅ General Dashboard Styling */
-.wrap {
+ .wrap {
     max-width: 100%;
     margin: 20px auto;
     padding: 20px;
     border-radius: 10px;
 }
 
-/* ✅ Quick Links - Improved Buttons */
+/* ✅ Quick Links - Gradient Buttons */
 .dashboard-quick-links {
     display: flex;
     gap: 15px;
@@ -36,6 +33,52 @@
     background: linear-gradient(135deg, #1d3db5, #122d89);
     transform: translateY(-2px);
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+/**
+ * ✅ Dashboard Date & Time - Improved Styling
+ */
+.dashboard-date-time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #0073aa, #005177);
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+/* ✅ Add an Icon Before Date & Time */
+.dashboard-date-time::before {
+    content: "🕒 ";
+    font-size: 22px;
+    margin-right: 10px;
+}
+
+/* ✅ Text Styling */
+.dashboard-date-time-text {
+    font-family: "Arial", sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* ✅ Responsive Adjustments */
+@media (max-width: 768px) {
+    .dashboard-date-time {
+        font-size: 18px;
+        padding: 12px 15px;
+    }
+
+    .dashboard-date-time::before {
+        font-size: 20px;
+    }
 }
 
 /* ✅ WordPress Admin Links Section */
@@ -89,38 +132,6 @@
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* ✅ Responsive Adjustments */
-@media (max-width: 768px) {
-    .dashboard-wp-links-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 480px) {
-    .dashboard-wp-links-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-
-.wp-admin-link {
-    display: block;
-    padding: 12px;
-    background: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    text-align: center;
-    text-decoration: none;
-    color: #333;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-.wp-admin-link:hover {
-    background: #0073aa;
-    color: #fff;
-    transform: translateY(-3px);
-}
 
 /* ✅ Task Section - Updated Grid Layout */
 .dashboard-tasks-grid {
@@ -165,8 +176,10 @@
     margin-top: auto;
 }
 
-/* ✅ Meetings Section */
-.dashboard-meetings-grid {
+/**
+ * ✅ Meetings Section
+ */
+ .dashboard-meetings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
@@ -193,6 +206,53 @@
     font-weight: bold;
     margin-bottom: 10px;
     color: #0073aa;
+}
+
+/**
+ * ✅ Google Calendar Styling
+ */
+.nfinite-calendar-wrapper {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* ✅ Google Calendar Title */
+.nfinite-calendar-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+/* ✅ Google Calendar iframe Styling */
+.nfinite-calendar {
+    width: 100%;
+    height: 650px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* ✅ Responsive Adjustments */
+@media (max-width: 1024px) {
+    .nfinite-calendar {
+        height: 550px;
+    }
+}
+
+@media (max-width: 768px) {
+    .nfinite-calendar {
+        height: 500px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nfinite-calendar {
+        height: 450px;
+    }
 }
 
 /* ✅ Notes Section */

@@ -5,6 +5,42 @@
  * @package Nfinite_Dash
  */
 
+ /**
+ * ✅ Display Quick Links and Date/Time on Meetings Dashboard
+ */
+function display_meetings_dashboard_header() {
+    global $pagenow, $post_type;
+
+    // Ensure this only appears on the Meetings CPT admin page
+    if ($pagenow === 'edit.php' && $post_type === 'meetings') {
+        date_default_timezone_set('America/New_York');
+        $current_date_time = date('F j, Y - g:i A T');
+
+        ?>
+        <div class="wrap">
+            <h1><?php echo __("Nfinite Meetings Dashboard", 'nfinite-dash'); ?></h1>
+
+            <!-- ✅ Quick Links -->
+            <div class="dashboard-quick-links">
+                <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="quick-link"><?php _e('Meetings', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=client'); ?>" class="quick-link"><?php _e('Clients', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('profile.php'); ?>" class="quick-link"><?php _e('My Profile', 'nfinite-dash'); ?></a>
+            </div>
+
+            <!-- ✅ Date & Time -->
+            <div class="dashboard-date-time">
+                <p class="dashboard-date-time-text"><?php echo esc_html($current_date_time); ?></p>
+            </div>
+        </div>
+        <?php
+    }
+}
+add_action('all_admin_notices', 'display_meetings_dashboard_header');
+
+
 class Nfinite_Dash_Meetings_CPT {
 
     public function __construct() {
@@ -15,6 +51,7 @@ class Nfinite_Dash_Meetings_CPT {
         // ✅ Admin Table Columns
         add_filter('manage_meetings_posts_columns', array($this, 'add_meeting_columns'));
         add_action('manage_meetings_posts_custom_column', array($this, 'populate_meeting_columns'), 10, 2);
+        add_action('all_admin_notices', array($this, 'display_google_calendar_in_admin'));
 
         // ✅ Sorting & Filtering
         add_filter('manage_edit-meetings_sortable_columns', array($this, 'make_meeting_columns_sortable'));
@@ -28,12 +65,13 @@ class Nfinite_Dash_Meetings_CPT {
     public function register_post_type() {
         $args = array(
             'labels' => array(
-                'name'          => __('Meetings', 'nfinite-dash'),
-                'singular_name' => __('Meeting', 'nfinite-dash'),
+                'name'          => __('Meeting Notes', 'nfinite-dash'),
+                'singular_name' => __('Meeting Note', 'nfinite-dash'),
                 'menu_name'     => __('Meetings', 'nfinite-dash'),
-                'add_new'       => __('Add New Meeting', 'nfinite-dash'),
-                'all_items'     => __('All Meetings', 'nfinite-dash'),
-                'edit_item'     => __('Edit Meeting', 'nfinite-dash'),
+                'add_new'       => __('Add New Meeting Note', 'nfinite-dash'),
+                'add_new_item'  => __('Add New Meeting Note', 'nfinite-dash'),
+                'all_items'     => __('All Meeting Notes', 'nfinite-dash'),
+                'edit_item'     => __('Edit Meeting Note', 'nfinite-dash'),
                 'view_item'     => __('View Meeting', 'nfinite-dash'),
             ),
             'public'        => true,
@@ -45,6 +83,31 @@ class Nfinite_Dash_Meetings_CPT {
         );
         register_post_type('meetings', $args);
     }
+
+    /**
+ * ✅ Display Google Calendar on Meetings Admin Page
+ */
+public function display_google_calendar_in_admin() {
+    global $pagenow, $post_type;
+    
+    // Only show on Meetings CPT Admin Page
+    if ($pagenow === 'edit.php' && $post_type === 'meetings') {
+        ?>
+        <div class="nfinite-calendar-wrapper">
+            <h2 class="nfinite-calendar-title">📅 Upcoming Meetings Calendar</h2>
+            <iframe 
+                class="nfinite-calendar"
+                src="https://calendar.google.com/calendar/embed?src=bc%40qckbot.com&ctz=America%2FNew_York"
+                style="border: 0;" 
+                width="100%" 
+                height="600" 
+                frameborder="0" 
+                scrolling="no">
+            </iframe>
+        </div>
+        <?php
+    }
+}
 
     /**
      * ✅ Make Meeting Columns Sortable
