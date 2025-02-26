@@ -5,6 +5,42 @@
  * @package Nfinite_Dash
  */
 
+ /**
+ * ✅ Display Quick Links and Date/Time on Meetings Dashboard
+ */
+function display_meetings_dashboard_header() {
+    global $pagenow, $post_type;
+
+    // Ensure this only appears on the Meetings CPT admin page
+    if ($pagenow === 'edit.php' && $post_type === 'meetings') {
+        date_default_timezone_set('America/New_York');
+        $current_date_time = date('F j, Y - g:i A T');
+
+        ?>
+        <div class="wrap">
+            <h1><?php echo __("Nfinite Meetings Dashboard", 'nfinite-dash'); ?></h1>
+
+            <!-- ✅ Quick Links -->
+            <div class="dashboard-quick-links">
+                <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="quick-link"><?php _e('Meetings', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('edit.php?post_type=client'); ?>" class="quick-link"><?php _e('Clients', 'nfinite-dash'); ?></a>
+                <a href="<?php echo admin_url('profile.php'); ?>" class="quick-link"><?php _e('My Profile', 'nfinite-dash'); ?></a>
+            </div>
+
+            <!-- ✅ Date & Time -->
+            <div class="dashboard-date-time">
+                <p class="dashboard-date-time-text"><?php echo esc_html($current_date_time); ?></p>
+            </div>
+        </div>
+        <?php
+    }
+}
+add_action('all_admin_notices', 'display_meetings_dashboard_header');
+
+
 class Nfinite_Dash_Meetings_CPT {
 
     public function __construct() {
@@ -15,42 +51,92 @@ class Nfinite_Dash_Meetings_CPT {
         // ✅ Admin Table Columns
         add_filter('manage_meetings_posts_columns', array($this, 'add_meeting_columns'));
         add_action('manage_meetings_posts_custom_column', array($this, 'populate_meeting_columns'), 10, 2);
+        add_action('all_admin_notices', array($this, 'display_google_calendar_in_admin'));
 
-        // ✅ Sorting & Filters
+        // ✅ Sorting & Filtering
         add_filter('manage_edit-meetings_sortable_columns', array($this, 'make_meeting_columns_sortable'));
+        add_action('pre_get_posts', array($this, 'filter_upcoming_meetings'));
         add_action('pre_get_posts', array($this, 'modify_meeting_orderby'));
 
-        // ✅ Shortcode to List Meetings
-        add_shortcode('list_meetings', array($this, 'display_meetings_shortcode'));
+        // ✅ Add "View Past Meetings" Button
+        add_action('restrict_manage_posts', array($this, 'add_past_meetings_button'));
     }
 
     public function register_post_type() {
-        $labels = array(
-            'name'          => __('Meetings', 'nfinite-dash'),
-            'singular_name' => __('Meeting', 'nfinite-dash'),
-            'menu_name'     => __('Meetings', 'nfinite-dash'),
-            'add_new'       => __('Add New Meeting', 'nfinite-dash'),
-            'all_items'     => __('All Meetings', 'nfinite-dash'),
-            'edit_item'     => __('Edit Meeting', 'nfinite-dash'),
-            'view_item'     => __('View Meeting', 'nfinite-dash'),
-        );
-    
         $args = array(
-            'labels'        => $labels,
+            'labels' => array(
+                'name'          => __('Meeting Notes', 'nfinite-dash'),
+                'singular_name' => __('Meeting Note', 'nfinite-dash'),
+                'menu_name'     => __('Meetings', 'nfinite-dash'),
+                'add_new'       => __('Add New Meeting Note', 'nfinite-dash'),
+                'add_new_item'  => __('Add New Meeting Note', 'nfinite-dash'),
+                'all_items'     => __('All Meeting Notes', 'nfinite-dash'),
+                'edit_item'     => __('Edit Meeting Note', 'nfinite-dash'),
+                'view_item'     => __('View Meeting', 'nfinite-dash'),
+            ),
             'public'        => true,
             'has_archive'   => true,
             'show_ui'       => true,
-            'show_in_menu'  => 'admin.php?page=nfinite-dash',
-            'show_in_menu'  => 'nfinite-dashboard', // THIS MOVES IT UNDER "Nfinite Dashboard"
+            'show_in_menu'  => 'nfinite-dashboard',
             'menu_icon'     => 'dashicons-calendar-alt',
             'supports'      => array('title', 'editor'),
         );
-    
         register_post_type('meetings', $args);
     }
-    
+
     /**
-     * ✅ Add Meeting Meta Boxes
+ * ✅ Display Google Calendar on Meetings Admin Page
+ */
+public function display_google_calendar_in_admin() {
+    global $pagenow, $post_type;
+    
+    // Only show on Meetings CPT Admin Page
+    if ($pagenow === 'edit.php' && $post_type === 'meetings') {
+        ?>
+        <div class="nfinite-calendar-wrapper">
+            <h2 class="nfinite-calendar-title">📅 Upcoming Meetings Calendar</h2>
+            <iframe 
+                class="nfinite-calendar"
+                src="https://calendar.google.com/calendar/embed?src=bc%40qckbot.com&ctz=America%2FNew_York"
+                style="border: 0;" 
+                width="100%" 
+                height="600" 
+                frameborder="0" 
+                scrolling="no">
+            </iframe>
+        </div>
+        <?php
+    }
+}
+
+    /**
+     * ✅ Make Meeting Columns Sortable
+     */
+    public function make_meeting_columns_sortable($columns) {
+        $columns['meeting_date'] = 'meeting_date';
+        $columns['meeting_time'] = 'meeting_time';
+        return $columns;
+    }
+
+    /**
+     * ✅ Modify Query Order for Sorting
+     */
+    public function modify_meeting_orderby($query) {
+        if (is_admin() && $query->is_main_query() && $query->get('post_type') === 'meetings') {
+            $orderby = $query->get('orderby');
+            if ($orderby === 'meeting_date') {
+                $query->set('meta_key', '_meeting_date');
+                $query->set('orderby', 'meta_value');
+            }
+            if ($orderby === 'meeting_time') {
+                $query->set('meta_key', '_meeting_time');
+                $query->set('orderby', 'meta_value');
+            }
+        }
+    }
+
+    /**
+     * ✅ Add Meta Boxes for Meetings (Date, Time, Link, Status, Type)
      */
     public function add_meeting_meta_boxes() {
         add_meta_box(
@@ -64,66 +150,113 @@ class Nfinite_Dash_Meetings_CPT {
     }
 
     /**
-     * ✅ Meta Box Callback
+     * ✅ Meeting Meta Box Callback (Date, Time, Link, Status, Type)
      */
     public function meeting_meta_box_callback($post) {
-        $date         = get_post_meta($post->ID, '_meeting_date', true);
-        $time         = get_post_meta($post->ID, '_meeting_time', true);
-        $team         = get_post_meta($post->ID, '_meeting_team', true);
-        $status       = get_post_meta($post->ID, '_meeting_status', true);
-        $meet_link    = get_post_meta($post->ID, '_meeting_link', true);
-        $meeting_type = get_post_meta($post->ID, '_meeting_type', true);
+        $meeting_date   = get_post_meta($post->ID, '_meeting_date', true);
+        $meeting_time   = get_post_meta($post->ID, '_meeting_time', true);
+        $meeting_status = get_post_meta($post->ID, '_meeting_status', true) ?: 'pending';
+        $meeting_link   = get_post_meta($post->ID, '_meeting_link', true);
+        $meeting_type   = get_post_meta($post->ID, '_meeting_type', true) ?: 'google_meet';
 
-        wp_nonce_field('meeting_meta_save', 'meeting_meta_nonce');
+        wp_nonce_field('meeting_save_meta_box_data', 'meeting_meta_box_nonce');
+
         ?>
-
         <p>
-            <label for="meeting_date"><?php _e('Date:', 'nfinite-dash'); ?></label>
-            <input type="date" id="meeting_date" name="meeting_date" value="<?php echo esc_attr($date); ?>" class="widefat">
+            <label for="meeting_date"><?php _e('Meeting Date:', 'nfinite-dash'); ?></label>
+            <input type="date" name="meeting_date" id="meeting_date" value="<?php echo esc_attr($meeting_date); ?>" />
         </p>
         <p>
-            <label for="meeting_time"><?php _e('Time:', 'nfinite-dash'); ?></label>
-            <input type="time" id="meeting_time" name="meeting_time" value="<?php echo esc_attr($time); ?>" class="widefat">
+            <label for="meeting_time"><?php _e('Meeting Time:', 'nfinite-dash'); ?></label>
+            <input type="time" name="meeting_time" id="meeting_time" value="<?php echo esc_attr($meeting_time); ?>" />
         </p>
         <p>
-            <label for="meeting_team"><?php _e('Team:', 'nfinite-dash'); ?></label>
-            <input type="text" id="meeting_team" name="meeting_team" value="<?php echo esc_attr($team); ?>" class="widefat">
-        </p>
-        <p>
-            <label for="meeting_status"><?php _e('Status:', 'nfinite-dash'); ?></label>
-            <select id="meeting_status" name="meeting_status" class="widefat">
-                <option value="pending" <?php selected($status, 'pending'); ?>>Pending</option>
-                <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
-                <option value="canceled" <?php selected($status, 'canceled'); ?>>Canceled</option>
+            <label for="meeting_status"><?php _e('Meeting Status:', 'nfinite-dash'); ?></label>
+            <select name="meeting_status" id="meeting_status">
+                <option value="pending" <?php selected($meeting_status, 'pending'); ?>>Pending</option>
+                <option value="completed" <?php selected($meeting_status, 'completed'); ?>>Completed</option>
+                <option value="canceled" <?php selected($meeting_status, 'canceled'); ?>>Canceled</option>
             </select>
         </p>
         <p>
-            <label for="meeting_link"><?php _e('Meet Link:', 'nfinite-dash'); ?></label>
-            <input type="url" id="meeting_link" name="meeting_link" value="<?php echo esc_url($meet_link); ?>" class="widefat" placeholder="https://example.com/meet">
+            <label for="meeting_link"><?php _e('Meeting Link:', 'nfinite-dash'); ?></label>
+            <input type="url" name="meeting_link" id="meeting_link" value="<?php echo esc_attr($meeting_link); ?>" placeholder="https://example.com/meet" />
         </p>
         <p>
             <label for="meeting_type"><?php _e('Meeting Type:', 'nfinite-dash'); ?></label>
-            <select id="meeting_type" name="meeting_type" class="widefat">
+            <select name="meeting_type" id="meeting_type">
                 <option value="google_meet" <?php selected($meeting_type, 'google_meet'); ?>>Google Meet</option>
                 <option value="zoom" <?php selected($meeting_type, 'zoom'); ?>>Zoom</option>
                 <option value="microsoft_teams" <?php selected($meeting_type, 'microsoft_teams'); ?>>Microsoft Teams</option>
             </select>
         </p>
-
         <?php
     }
+
 
     /**
      * ✅ Save Meeting Meta Box Data
      */
     public function save_meeting_meta_box_data($post_id) {
-        if (!isset($_POST['meeting_meta_nonce']) || !wp_verify_nonce($_POST['meeting_meta_nonce'], 'meeting_meta_save')) return;
+        if (!isset($_POST['meeting_meta_box_nonce']) || !wp_verify_nonce($_POST['meeting_meta_box_nonce'], 'meeting_save_meta_box_data')) {
+            return;
+        }
 
-        $fields = ['meeting_date', 'meeting_time', 'meeting_team', 'meeting_status', 'meeting_link', 'meeting_type'];
-        foreach ($fields as $field) {
-            if (isset($_POST[$field])) {
-                update_post_meta($post_id, "_$field", sanitize_text_field($_POST[$field]));
+        $fields = [
+            '_meeting_date'   => 'sanitize_text_field',
+            '_meeting_time'   => 'sanitize_text_field',
+            '_meeting_status' => 'sanitize_text_field',
+            '_meeting_link'   => 'esc_url_raw',
+            '_meeting_type'   => 'sanitize_text_field',
+        ];
+
+        foreach ($fields as $field => $sanitizer) {
+            if (isset($_POST[ltrim($field, '_')])) {
+                update_post_meta($post_id, $field, call_user_func($sanitizer, $_POST[ltrim($field, '_')]));
             }
+        }
+    }
+
+    /**
+ * ✅ Filter: Show Only Upcoming Meetings (Based on Meeting Date)
+ */
+public function filter_upcoming_meetings($query) {
+    if (is_admin() && $query->is_main_query() && $query->get('post_type') === 'meetings') {
+        $filter_status = isset($_GET['filter_status']) ? sanitize_text_field($_GET['filter_status']) : '';
+        $current_date = current_time('Y-m-d'); // Get today's date
+
+        if ($filter_status !== 'past') {
+            // ✅ Show meetings where the meeting date is today or in the future
+            $query->set('meta_query', array(
+                array(
+                    'key'     => '_meeting_date',
+                    'value'   => $current_date,
+                    'compare' => '>=',
+                    'type'    => 'DATE',
+                )
+            ));
+        }
+    }
+}
+
+
+    /**
+     * ✅ Add "View Past Meetings" Button to Admin Table
+     */
+    public function add_past_meetings_button() {
+        global $typenow;
+
+        if ($typenow === 'meetings') {
+            $current_filter = isset($_GET['filter_status']) ? sanitize_text_field($_GET['filter_status']) : '';
+            $is_past = ($current_filter === 'past');
+            $button_label = $is_past ? __('View Upcoming Meetings', 'nfinite-dash') : __('View Past Meetings', 'nfinite-dash');
+            $button_url   = admin_url('edit.php?post_type=meetings');
+
+            if (!$is_past) {
+                $button_url = add_query_arg('filter_status', 'past', $button_url);
+            }
+
+            echo '<a href="' . esc_url($button_url) . '" class="button">' . esc_html($button_label) . '</a>';
         }
     }
 
@@ -131,10 +264,11 @@ class Nfinite_Dash_Meetings_CPT {
      * ✅ Add Custom Columns to Meetings Admin Table
      */
     public function add_meeting_columns($columns) {
-        unset($columns['date']); // Remove default Date column
+        unset($columns['date']);
         $columns['meeting_date'] = __('Meeting Date', 'nfinite-dash');
         $columns['meeting_time'] = __('Meeting Time', 'nfinite-dash');
-        $columns['meet_link']    = __('Meet Link', 'nfinite-dash');
+        $columns['meeting_status'] = __('Status', 'nfinite-dash');
+        $columns['meeting_link'] = __('Join Link', 'nfinite-dash');
         return $columns;
     }
 
@@ -142,37 +276,11 @@ class Nfinite_Dash_Meetings_CPT {
      * ✅ Populate Custom Columns
      */
     public function populate_meeting_columns($column, $post_id) {
-        if ($column === 'meeting_date') {
-            echo esc_html(get_post_meta($post_id, '_meeting_date', true));
-        }
-        if ($column === 'meeting_time') {
-            $time = get_post_meta($post_id, '_meeting_time', true);
-            echo $time ? date('g:i A', strtotime($time)) : __('N/A', 'nfinite-dash');
-        }
-        if ($column === 'meet_link') {
-            $meet_link = get_post_meta($post_id, '_meeting_link', true);
-            echo $meet_link ? '<a href="' . esc_url($meet_link) . '" target="_blank">Join Now</a>' : __('N/A', 'nfinite-dash');
-        }
-    }
-
-    /**
-     * ✅ Make Columns Sortable
-     */
-    public function make_meeting_columns_sortable($columns) {
-        $columns['meeting_date'] = '_meeting_date';
-        return $columns;
-    }
-
-    /**
-     * ✅ Modify Query Order for Sorting
-     */
-    public function modify_meeting_orderby($query) {
-        if (is_admin() && $query->is_main_query()) {
-            $orderby = $query->get('orderby');
-            if ($orderby === '_meeting_date') {
-                $query->set('meta_key', '_meeting_date');
-                $query->set('orderby', 'meta_value');
-            }
+        $meta_value = get_post_meta($post_id, '_' . $column, true);
+        if ($column === 'meeting_link') {
+            echo $meta_value ? '<a href="' . esc_url($meta_value) . '" target="_blank">Join Now</a>' : __('N/A', 'nfinite-dash');
+        } else {
+            echo esc_html($meta_value);
         }
     }
 }
