@@ -3,7 +3,7 @@
  * Plugin Name:       Nfinite Dashboard
  * Plugin URI:        https://sitesbyyogi.com/dashboard-plugin
  * Description:       Nfinite Dashboard is a custom WordPress admin dashboard designed to streamline workflow, enhance productivity, and provide quick access to essential tools. Built specifically for WordPress professionals, it replaces the default dashboard with a fully customizable interface that keeps everything organized and accessible in one place.
- * Version:           1.0.1
+ * Version:           2.1.0
  * Author:            SitesByYogi
  * Author URI:        https://sitesbyyogi.com/
  * License:           GPL-2.0+
@@ -20,7 +20,7 @@ if (!defined('WPINC')) {
 /**
  * Plugin Version
  */
-define('NFINITE_DASH_VERSION', '1.0.1');
+define('NFINITE_DASH_VERSION', '2.1.0');
 
 /**
  * Define Plugin Path and URL

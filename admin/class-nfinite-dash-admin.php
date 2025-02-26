@@ -80,12 +80,17 @@ class Nfinite_Dash_Admin {
 	 */
 	public function enqueue_scripts() {
 		wp_enqueue_script(
-			$this->plugin_name,
-			plugin_dir_url(__FILE__) . 'js/nfinite-dash-admin.js',
-			array('jquery'),
-			$this->version,
+			'nfinite-dash-admin',
+			plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-admin.js',
+			['jquery'],
+			'1.0',
 			true
 		);
+		
+		wp_localize_script('nfinite-dash-admin', 'taskManagerAjax', [
+			'ajax_url' => admin_url('admin-ajax.php'),
+			'nonce'    => wp_create_nonce('task_manager_update_meta'),
+		]);		
 	}
 
 	/**

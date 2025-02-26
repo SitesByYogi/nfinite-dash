@@ -32,8 +32,8 @@ function nfinite_dashboard_admin_menu() {
 
     add_submenu_page(
         'nfinite-dash',
-        __('Task', 'nfinite-dash'),
-        __('Task', 'nfinite-dash'),
+        __('Tasks', 'nfinite-dash'),
+        __('Tasks', 'nfinite-dash'),
         'manage_options',
         'edit.php?post_type=task_manager_task'
     );
