@@ -1,3 +1,46 @@
+jQuery(document).ready(function ($) {
+    /**
+     * ✅ Function to update Task Metadata via AJAX
+     */
+    function updateTaskMeta(element) {
+        let taskId = $(element).data("task-id");
+        let metaKey = $(element).attr("data-meta-key");
+        let metaValue = $(element).val();
+
+        $.ajax({
+            url: taskManagerAjax.ajax_url, // Ensure taskManagerAjax is localized in PHP
+            type: "POST",
+            data: {
+                action: "task_manager_update_meta",
+                task_id: taskId,
+                meta_key: metaKey,
+                meta_value: metaValue,
+                _ajax_nonce: taskManagerAjax.nonce, // Ensure correct nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    console.log(metaKey + " updated successfully.");
+                } else {
+                    console.error("Failed to update " + metaKey + ": " + response.data);
+                    alert("Failed to update " + metaKey);
+                }
+            },
+            error: function () {
+                console.error("AJAX Error: Unable to update " + metaKey);
+                alert("AJAX Error: Unable to update " + metaKey);
+            },
+        });
+    }
+
+    /**
+     * ✅ Event Listener for Dropdown Change
+     */
+    $(document).on("change", ".task-meta-dropdown", function () {
+        updateTaskMeta(this);
+    });
+});
+
+
 (function ($) {
     'use strict';
 

@@ -12,10 +12,15 @@ $tasks = get_posts([
     'post_type'      => 'task_manager_task',
     'posts_per_page' => 6,
     'meta_query'     => [
+        'relation' => 'OR',
         [
             'key'     => '_task_status',
-            'value'   => 'complete',
-            'compare' => '!=',
+            'value'   => ['pending', 'in_progress'],
+            'compare' => 'IN',
+        ],
+        [
+            'key'     => '_task_status',
+            'compare' => 'NOT EXISTS',
         ],
     ],
 ]);
@@ -48,21 +53,23 @@ $tasks = get_posts([
                 </p>
 
                 <!-- ✅ Editable Priority Dropdown -->
-                <label for="task-priority-<?php echo esc_attr($task_id); ?>"><?php _e('Priority:', 'nfinite-dash'); ?></label>
-                <select class="task-priority-dropdown" id="task-priority-<?php echo esc_attr($task_id); ?>" data-task-id="<?php echo esc_attr($task_id); ?>">
-                    <option value="low" <?php selected($priority, 'low'); ?>>Low</option>
-                    <option value="medium" <?php selected($priority, 'medium'); ?>>Medium</option>
-                    <option value="high" <?php selected($priority, 'high'); ?>>High</option>
-                    <option value="urgent" <?php selected($priority, 'urgent'); ?>>Urgent</option>
-                </select>
+                <!-- ✅ Editable Priority Dropdown -->
+<label for="task-priority-<?php echo esc_attr($task_id); ?>"><?php _e('Priority:', 'nfinite-dash'); ?></label>
+<select class="task-meta-dropdown" id="task-priority-<?php echo esc_attr($task_id); ?>" data-task-id="<?php echo esc_attr($task_id); ?>" data-meta-key="_task_priority">
+    <option value="low" <?php selected($priority, 'low'); ?>>Low</option>
+    <option value="medium" <?php selected($priority, 'medium'); ?>>Medium</option>
+    <option value="high" <?php selected($priority, 'high'); ?>>High</option>
+    <option value="urgent" <?php selected($priority, 'urgent'); ?>>Urgent</option>
+</select>
 
-                <!-- ✅ Editable Status Dropdown -->
-                <label for="task-status-<?php echo esc_attr($task_id); ?>"><?php _e('Status:', 'nfinite-dash'); ?></label>
-                <select class="task-status-dropdown" id="task-status-<?php echo esc_attr($task_id); ?>" data-task-id="<?php echo esc_attr($task_id); ?>">
-                    <option value="pending" <?php selected($status, 'pending'); ?>>Pending</option>
-                    <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
-                    <option value="complete" <?php selected($status, 'complete'); ?>>Complete</option>
-                </select>
+<!-- ✅ Editable Status Dropdown -->
+<label for="task-status-<?php echo esc_attr($task_id); ?>"><?php _e('Status:', 'nfinite-dash'); ?></label>
+<select class="task-meta-dropdown" id="task-status-<?php echo esc_attr($task_id); ?>" data-task-id="<?php echo esc_attr($task_id); ?>" data-meta-key="_task_status">
+    <option value="pending" <?php selected($status, 'pending'); ?>>Pending</option>
+    <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
+    <option value="complete" <?php selected($status, 'complete'); ?>>Complete</option>
+</select>
+
 
                 <!-- Edit Button -->
                 <div class="task-actions">
@@ -85,35 +92,55 @@ $tasks = get_posts([
 <!-- ✅ JavaScript for AJAX Inline Editing -->
 <script>
 jQuery(document).ready(function ($) {
+    console.log("Nfinite Dashboard Script Loaded");
+
+    /**
+     * ✅ Function to update Task Metadata via AJAX
+     */
     function updateTaskMeta(taskId, metaKey, metaValue) {
+        if (!taskId || !metaKey) {
+            console.error("Missing taskId or metaKey for AJAX update.");
+            return;
+        }
+
+        console.log("Updating Task:", { taskId, metaKey, metaValue });
+
         $.ajax({
-            url: '<?php echo admin_url('admin-ajax.php'); ?>',
-            type: 'POST',
+            url: taskManagerAjax.ajax_url, // Ensure taskManagerAjax is localized
+            type: "POST",
             data: {
-                action: 'update_task_meta',
+                action: "task_manager_update_meta",
                 task_id: taskId,
                 meta_key: metaKey,
                 meta_value: metaValue,
-                _ajax_nonce: '<?php echo wp_create_nonce("update_task_meta_nonce"); ?>'
+                _ajax_nonce: taskManagerAjax.nonce // Ensure correct nonce
             },
             success: function (response) {
                 if (response.success) {
-                    alert(metaKey.replace('_task_', '').replace('_', ' ') + ' updated successfully.');
+                    console.log(`Updated ${metaKey} successfully.`);
                 } else {
-                    alert('Failed to update ' + metaKey.replace('_task_', '').replace('_', ' ') + '.');
+                    console.error(`Failed to update ${metaKey}:`, response.data);
+                    alert(`Failed to update ${metaKey}`);
                 }
             },
-            error: function () {
-                alert('An error occurred while updating ' + metaKey.replace('_task_', '').replace('_', ' ') + '.');
+            error: function (xhr, status, error) {
+                console.error("AJAX Error:", error);
+                alert("AJAX Error: Unable to update task.");
             }
         });
     }
 
-    $('.task-priority-dropdown, .task-status-dropdown').on('change', function () {
-        var taskId = $(this).data('task-id');
-        var metaKey = $(this).hasClass('task-priority-dropdown') ? '_task_priority' : '_task_status';
-        var metaValue = $(this).val();
+    /**
+     * ✅ Event Listener for Task Dropdown Changes
+     */
+    $(document).on("change", ".task-meta-dropdown", function () {
+        let taskId = $(this).data("task-id");
+        let metaKey = $(this).data("meta-key");
+        let metaValue = $(this).val();
+
         updateTaskMeta(taskId, metaKey, metaValue);
     });
 });
+
 </script>
+

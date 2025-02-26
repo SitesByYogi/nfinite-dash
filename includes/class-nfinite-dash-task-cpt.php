@@ -307,46 +307,56 @@ public function filter_tasks($query) {
     }
 
     /**
-     * ✅ AJAX Handler for Updating Meta Fields
-     */
-    public function update_meta_via_ajax() {
-        check_ajax_referer('task_manager_update_meta', '_ajax_nonce');
+ * ✅ AJAX Handler for Updating Task Metadata
+ */
+function task_manager_update_meta() {
+    // Verify nonce
+    check_ajax_referer('task_manager_update_meta', '_ajax_nonce');
 
-        $post_id = intval($_POST['post_id']);
-        $meta_key = sanitize_text_field($_POST['meta_key']);
-        $meta_value = sanitize_text_field($_POST['meta_value']);
+    // Get task ID, meta key, and value
+    $post_id = intval($_POST['task_id']);
+    $meta_key = sanitize_text_field($_POST['meta_key']);
+    $meta_value = sanitize_text_field($_POST['meta_value']);
 
-        if (!current_user_can('edit_post', $post_id)) {
-            wp_send_json_error('Permission denied.');
-        }
+    // Ensure user has permission
+    if (!current_user_can('edit_post', $post_id)) {
+        wp_send_json_error(['message' => 'Permission denied.']);
+    }
 
-        if (update_post_meta($post_id, '_' . $meta_key, $meta_value)) {
-            wp_send_json_success(['message' => 'Updated successfully.']);
-        } else {
-            wp_send_json_error(['message' => 'Failed to update.']);
-        }
-    }    
+    // Ensure key starts with `_`
+    if (strpos($meta_key, '_task_') !== 0) {
+        $meta_key = "_task_" . $meta_key;
+    }
+
+    // Update or add meta value
+    $updated = update_post_meta($post_id, $meta_key, $meta_value);
+    if (!$updated) {
+        add_post_meta($post_id, $meta_key, $meta_value, true);
+    }
+
+    wp_send_json_success(['message' => 'Updated successfully.']);
+}
+// ✅ Properly closing this function to prevent syntax errors
 
     /**
-     * ✅ Enqueue JavaScript for Inline Editing
-     */
-    public function enqueue_inline_edit_scripts($hook) {
-        if ($hook === 'edit.php' && get_current_screen()->post_type === 'task_manager_task') {
-            wp_enqueue_script(
-                'nfinite-dash-admin',
-                plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-admin.js',
-                ['jquery'],
-                '1.0',
-                true
-            );
-    
-            wp_localize_script('nfinite-dash-admin', 'taskManagerAjax', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('task_manager_update_meta'),
-            ]);
-        }
+ * ✅ Enqueue JavaScript for Inline Editing
+ */
+public function enqueue_inline_edit_scripts($hook) {
+    if ($hook === 'edit.php' && get_current_screen()->post_type === 'task_manager_task') {
+        wp_enqueue_script(
+            'nfinite-dash-admin',
+            plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-admin.js',
+            ['jquery'],
+            '1.0',
+            true
+        );
+
+        wp_localize_script('nfinite-dash-admin', 'taskManagerAjax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('task_manager_update_meta'),
+        ]);
     }
-    
+}
 }
 
 // ✅ Initialize Task CPT
