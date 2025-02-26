@@ -7,13 +7,21 @@
  * @package Nfinite_Dash
  */
 
-// Fetch Projects
+// Fetch Active Projects (Exclude Completed Projects)
 $projects = get_posts([
     'post_type'      => 'my_projects',
     'posts_per_page' => 6, // Show up to 6 projects
     'orderby'        => 'date',
     'order'          => 'DESC',
+    'meta_query'     => [
+        [
+            'key'     => '_my_project_status',
+            'value'   => 'completed',
+            'compare' => '!=', // Exclude completed projects
+        ],
+    ],
 ]);
+
 
 ?>
 
