@@ -46,7 +46,7 @@ class Nfinite_Dash_My_Projects_CPT {
         add_action('init', array($this, 'register_post_type'));
         add_action('init', array($this, 'register_taxonomies'));
         add_action('add_meta_boxes', array($this, 'add_project_meta_boxes'));
-        add_action('save_post', array($this, 'save_project_meta_box_data'));
+        add_action('save_post_my_projects', array($this, 'save_project_meta_box_data'));
 
         // ✅ Admin Table Columns
         add_filter('manage_my_projects_posts_columns', array($this, 'add_project_columns'));
@@ -55,6 +55,7 @@ class Nfinite_Dash_My_Projects_CPT {
         add_action('pre_get_posts', array($this, 'modify_project_orderby'));
 
         // ✅ AJAX Handling for Inline Editing
+        add_action('wp_ajax_update_project_meta', 'update_project_meta');
         add_action('wp_ajax_my_projects_update_meta', array($this, 'update_meta_via_ajax'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_inline_edit_scripts'));
     }
@@ -103,6 +104,7 @@ class Nfinite_Dash_My_Projects_CPT {
         ));
     }
 
+    
     /**
      * ✅ Add Project Meta Boxes (Including Project Links)
      */
@@ -132,13 +134,13 @@ class Nfinite_Dash_My_Projects_CPT {
     public function project_meta_box_callback($post) {
         $status = get_post_meta($post->ID, '_project_status', true);
         $priority = get_post_meta($post->ID, '_project_priority', true);
-
+    
         wp_nonce_field('my_projects_save_meta_box_data', 'my_projects_meta_box_nonce');
-
+    
         ?>
         <p>
             <label for="project_status"><?php _e('Project Status:', 'my-projects'); ?></label>
-            <select name="project_status" id="project_status">
+            <select name="_project_status" id="project_status">
                 <option value="not_started" <?php selected($status, 'not_started'); ?>>Not Started</option>
                 <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
                 <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
@@ -146,7 +148,7 @@ class Nfinite_Dash_My_Projects_CPT {
         </p>
         <p>
             <label for="project_priority"><?php _e('Priority:', 'my-projects'); ?></label>
-            <select name="project_priority" id="project_priority">
+            <select name="_project_priority" id="project_priority">
                 <option value="low" <?php selected($priority, 'low'); ?>>Low</option>
                 <option value="medium" <?php selected($priority, 'medium'); ?>>Medium</option>
                 <option value="high" <?php selected($priority, 'high'); ?>>High</option>
@@ -154,7 +156,7 @@ class Nfinite_Dash_My_Projects_CPT {
             </select>
         </p>
         <?php
-    }
+    }    
 
     /**
      * ✅ Project Links Meta Box Callback (Similar to My Notes Links)
@@ -203,11 +205,37 @@ class Nfinite_Dash_My_Projects_CPT {
      * ✅ Save Project Meta Box Data (Including Project Links)
      */
     public function save_project_meta_box_data($post_id) {
-        if (!isset($_POST['project_links_nonce']) ||
+        // ✅ Security Checks
+        if (!isset($_POST['my_projects_meta_box_nonce']) || 
+            !wp_verify_nonce($_POST['my_projects_meta_box_nonce'], 'my_projects_save_meta_box_data')) {
+            return;
+        }
+    
+        // ✅ Prevent Auto-Save Overwrite
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+    
+        // ✅ Ensure the user has permission to edit
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+    
+        // ✅ Update Status and Priority
+        $meta_keys = ['_project_status', '_project_priority'];
+    
+        foreach ($meta_keys as $key) {
+            if (isset($_POST[str_replace('_', '', $key)])) { // Fix incorrect field names
+                update_post_meta($post_id, $key, sanitize_text_field($_POST[str_replace('_', '', $key)]));
+            }
+        }
+    
+        // ✅ Save Project Links
+        if (!isset($_POST['project_links_nonce']) || 
             !wp_verify_nonce($_POST['project_links_nonce'], 'save_project_links_nonce')) {
             return;
         }
-
+    
         $links = [];
         if (isset($_POST['project_links']) && is_array($_POST['project_links'])) {
             foreach ($_POST['project_links'] as $link) {
@@ -219,8 +247,9 @@ class Nfinite_Dash_My_Projects_CPT {
                 }
             }
         }
+    
         update_post_meta($post_id, '_my_project_links', $links);
-    }
+    }    
 
    /**
  * ✅ Add Custom Columns to My Projects Admin Table (Removes Published Date)
@@ -302,7 +331,7 @@ public function populate_project_columns($column, $post_id) {
         }
     }
 
-    /**
+   /**
  * ✅ AJAX Handler to Update Meta Fields for My Projects
  */
 public function update_meta_via_ajax() {
@@ -316,7 +345,28 @@ public function update_meta_via_ajax() {
         wp_send_json_error(['message' => 'Permission denied.']);
     }
 
-    if (update_post_meta($post_id, '_' . $meta_key, $meta_value)) {
+    if (update_post_meta($post_id, $meta_key, $meta_value)) {
+        wp_send_json_success(['message' => 'Updated successfully.']);
+    } else {
+        wp_send_json_error(['message' => 'Failed to update.']);
+    }
+}
+
+function update_project_meta() {
+    // Security check
+    check_ajax_referer('update_project_meta_nonce', 'security');
+
+    $project_id = intval($_POST['project_id']);
+    $meta_key = sanitize_text_field($_POST['meta_key']);
+    $meta_value = sanitize_text_field($_POST['meta_value']);
+
+    // Check permissions
+    if (!current_user_can('edit_post', $project_id)) {
+        wp_send_json_error(['message' => 'Permission denied.']);
+    }
+
+    // Update metadata
+    if (update_post_meta($project_id, $meta_key, $meta_value)) {
         wp_send_json_success(['message' => 'Updated successfully.']);
     } else {
         wp_send_json_error(['message' => 'Failed to update.']);
@@ -328,18 +378,25 @@ public function update_meta_via_ajax() {
  * ✅ Enqueue JavaScript for Inline Editing in My Projects
  */
 public function enqueue_inline_edit_scripts($hook) {
-    if ($hook === 'edit.php' && get_current_screen()->post_type === 'my_projects') {
+    $screen = get_current_screen();
+
+    if ($hook === 'post.php' && $screen->post_type === 'my_projects') {
+        // ✅ Ensure jQuery is loaded before our script
+        wp_enqueue_script('jquery');
+
+        // ✅ Correct script path and dependencies
         wp_enqueue_script(
-            'nfinite-dash-admin',
-            plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-admin.js', // ✅ Use existing JS file
-            ['jquery'],
-            '1.0',
+            'nfinite-dash-my-projects',
+            plugins_url('admin/js/nfinite-dash-my-projects.js', dirname(__FILE__)), // ✅ Corrected path
+            ['jquery'], // ✅ jQuery as a dependency
+            time(), // ✅ Prevent caching
             true
         );
 
-        wp_localize_script('nfinite-dash-admin', 'myProjectsAjax', [
+        // ✅ Localize AJAX data for secure requests
+        wp_localize_script('nfinite-dash-my-projects', 'myProjectsAjax', [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('my_projects_update_meta'),
+            'nonce'    => wp_create_nonce('my_projects_update_meta'),
         ]);
     }
 }

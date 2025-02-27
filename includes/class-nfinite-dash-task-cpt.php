@@ -48,6 +48,9 @@ class Nfinite_Dash_Task_CPT {
         add_action('init', array($this, 'register_taxonomies')); // ✅ Register Categories & Tags
         add_action('add_meta_boxes', array($this, 'add_task_meta_boxes'));
         add_action('save_post', array($this, 'save_task_meta_box_data'));
+        add_action('save_post_task_manager_task', array($this, 'save_task_meta_box_data'));
+
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_task_manager_scripts'));
 
         // ✅ Admin Table Columns
         add_filter('manage_task_manager_task_posts_columns', array($this, 'add_task_columns'));
@@ -59,8 +62,8 @@ class Nfinite_Dash_Task_CPT {
         add_filter('manage_edit-task_manager_task_columns', array($this, 'remove_unwanted_columns'));
 
         // ✅ AJAX Handling for Inline Editing
-        add_action('wp_ajax_task_manager_update_meta', array($this, 'update_meta_via_ajax'));
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_inline_edit_scripts'));
+        add_action('wp_ajax_task_manager_update_meta', array($this, 'task_manager_update_meta'));
+        add_action('wp_ajax_nopriv_task_manager_update_meta', array($this, 'task_manager_update_meta'));
 
         // ✅ Add Completed Tasks Button
         add_action('restrict_manage_posts', array($this, 'add_completed_tasks_button'));
@@ -194,53 +197,73 @@ public function filter_tasks($query) {
      * ✅ Task Meta Box Callback (Status, Priority)
      */
     public function task_meta_box_callback($post) {
+        // ✅ Security: Nonce Field
+        wp_nonce_field('task_manager_save_meta_box_data', 'task_manager_meta_box_nonce');
+    
         $fields = array(
             '_task_status'   => __('Task Status', 'task-manager'),
             '_task_priority' => __('Priority', 'task-manager'),
         );
-
-        wp_nonce_field('task_manager_save_meta_box_data', 'task_manager_meta_box_nonce');
-
+    
         foreach ($fields as $key => $label) {
             $value = get_post_meta($post->ID, $key, true);
             echo '<label for="' . esc_attr($key) . '">' . esc_html($label) . ':</label>';
-
-            $options = ($key === '_task_status') ?
+    
+            $options = ($key === '_task_status') ? 
                 ['pending' => 'Pending', 'in_progress' => 'In Progress', 'complete' => 'Complete'] :
                 ['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'urgent' => 'Urgent'];
-
-            echo '<select name="' . esc_attr($key) . '">';
+    
+            echo '<select name="' . esc_attr($key) . '" id="' . esc_attr($key) . '">';
             foreach ($options as $option_value => $option_label) {
                 echo '<option value="' . esc_attr($option_value) . '" ' . selected($value, $option_value, false) . '>' . esc_html($option_label) . '</option>';
             }
             echo '</select><br>';
         }
-    }
+    }    
 
     /**
      * ✅ Due Date Meta Box Callback
      */
     public function due_date_meta_box_callback($post) {
+        // ✅ Security: Nonce Field
+        wp_nonce_field('task_manager_save_meta_box_data', 'task_manager_meta_box_nonce');
+    
         $due_date = get_post_meta($post->ID, '_task_due_date', true);
         echo '<label for="task_due_date">' . __('Select Due Date:', 'task-manager') . '</label>';
-        echo '<input type="date" name="task_due_date" id="task_due_date" value="' . esc_attr($due_date) . '" />';
+        echo '<input type="date" name="_task_due_date" id="task_due_date" value="' . esc_attr($due_date) . '" />';
     }
 
     /**
      * ✅ Save Task Meta Box Data (Including Due Date)
      */
     public function save_task_meta_box_data($post_id) {
-        if (!isset($_POST['task_manager_meta_box_nonce']) ||
+        // ✅ Security Check: Verify nonce
+        if (!isset($_POST['task_manager_meta_box_nonce']) || 
             !wp_verify_nonce($_POST['task_manager_meta_box_nonce'], 'task_manager_save_meta_box_data')) {
             return;
         }
-
-        foreach (['_task_status', '_task_priority', 'task_due_date'] as $key) {
+    
+        // ✅ Prevent Auto-Save Overwrite
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+    
+        // ✅ Ensure the user has permission to edit
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+    
+        // ✅ Update Status, Priority, and Due Date
+        $meta_keys = ['_task_status', '_task_priority', '_task_due_date'];
+    
+        foreach ($meta_keys as $key) {
             if (isset($_POST[$key])) {
-                update_post_meta($post_id, '_' . $key, sanitize_text_field($_POST[$key]));
+                update_post_meta($post_id, $key, sanitize_text_field($_POST[$key]));
+            } else {
+                delete_post_meta($post_id, $key); // ✅ Remove if no value is set
             }
         }
-    }    
+    }     
 
     /**
      * ✅ Add Custom Columns to Tasks Admin Table (Including Due Date)
@@ -258,24 +281,23 @@ public function filter_tasks($query) {
      */
     public function populate_task_columns($column, $post_id) {
         $meta_value = get_post_meta($post_id, '_' . $column, true);
-
+    
         if ($column === 'task_due_date') {
             echo esc_html($meta_value ? date('F j, Y', strtotime($meta_value)) : '—');
         } elseif ($column === 'task_status' || $column === 'task_priority') {
-            echo '<select class="task-meta-dropdown" data-task-id="' . esc_attr($post_id) . '" data-meta-key="' . esc_attr($column) . '">';
-
-            $options = ($column === 'task_status') ?
+            echo '<select class="task-meta-dropdown" data-task-id="' . esc_attr($post_id) . '" data-meta-key="_' . esc_attr($column) . '">';
+    
+            $options = ($column === 'task_status') ? 
                 ['pending' => 'Pending', 'in_progress' => 'In Progress', 'complete' => 'Complete'] :
                 ['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'urgent' => 'Urgent'];
-
+    
             foreach ($options as $option_value => $option_label) {
                 echo '<option value="' . esc_attr($option_value) . '" ' . selected($meta_value, $option_value, false) . '>' . esc_html($option_label) . '</option>';
             }
             echo '</select>';
         }
-    }
+    }    
     
-
     /**
      * ✅ Add "View Completed Tasks" Button
      */
@@ -309,57 +331,70 @@ public function filter_tasks($query) {
     /**
  * ✅ AJAX Handler for Updating Task Metadata
  */
-function task_manager_update_meta() {
-    // Verify nonce
+
+ function task_manager_update_meta() {
     check_ajax_referer('task_manager_update_meta', '_ajax_nonce');
 
-    // Get task ID, meta key, and value
     $post_id = intval($_POST['task_id']);
     $meta_key = sanitize_text_field($_POST['meta_key']);
     $meta_value = sanitize_text_field($_POST['meta_value']);
 
+    // ✅ Debug AJAX Data
+    error_log("🔄 Updating task meta - Task ID: {$post_id}, Meta Key: {$meta_key}, Meta Value: {$meta_value}");
+
     // Ensure user has permission
     if (!current_user_can('edit_post', $post_id)) {
-        wp_send_json_error(['message' => 'Permission denied.']);
+        wp_send_json_error(['message' => '❌ Permission denied.']);
     }
 
-    // Ensure key starts with `_`
-    if (strpos($meta_key, '_task_') !== 0) {
-        $meta_key = "_task_" . $meta_key;
+    // Ensure correct format for meta keys
+    $allowed_meta_keys = ['_task_status', '_task_priority', '_task_due_date'];
+    if (!in_array($meta_key, $allowed_meta_keys, true)) {
+        wp_send_json_error(['message' => '❌ Invalid meta key.']);
     }
 
-    // Update or add meta value
-    $updated = update_post_meta($post_id, $meta_key, $meta_value);
-    if (!$updated) {
-        add_post_meta($post_id, $meta_key, $meta_value, true);
+    // ✅ Update metadata in database
+    if (update_post_meta($post_id, $meta_key, $meta_value)) {
+        error_log("✅ Successfully updated {$meta_key} to {$meta_value}");
+        wp_send_json_success([
+            'message' => '✅ Updated successfully.',
+            'meta_key' => $meta_key,
+            'meta_value' => $meta_value
+        ]);
+    } else {
+        error_log("❌ Failed to update {$meta_key}");
+        wp_send_json_error(['message' => '❌ Failed to update.']);
     }
-
-    wp_send_json_success(['message' => 'Updated successfully.']);
 }
+
+
 // ✅ Properly closing this function to prevent syntax errors
 
     /**
- * ✅ Enqueue JavaScript for Inline Editing
- */
-public function enqueue_inline_edit_scripts($hook) {
-    if ($hook === 'edit.php' && get_current_screen()->post_type === 'task_manager_task') {
-        wp_enqueue_script(
-            'nfinite-dash-admin',
-            plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-admin.js',
-            ['jquery'],
-            '1.0',
-            true
-        );
-
-        wp_localize_script('nfinite-dash-admin', 'taskManagerAjax', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('task_manager_update_meta'),
-        ]);
+     * ✅ Enqueue JavaScript for Task Manager Dropdowns & AJAX
+     */
+    public function enqueue_task_manager_scripts($hook) {
+        $screen = get_current_screen();
+    
+        // ✅ Ensure the script loads only on Task Manager admin pages
+        if (in_array($hook, ['edit.php', 'post.php']) && $screen->post_type === 'task_manager_task') {
+    
+            wp_enqueue_script(
+                'nfinite-dash-task-cpt',
+                plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-task-cpt.js',
+                ['jquery'],
+                time(), // ✅ Force fresh version
+                true
+            );
+    
+            wp_localize_script('nfinite-dash-task-cpt', 'taskManagerAjax', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('task_manager_update_meta'),
+            ]);
+        }
     }
-}
+    
 }
 
 // ✅ Initialize Task CPT
 $task_cpt = new Nfinite_Dash_Task_CPT();
-
-

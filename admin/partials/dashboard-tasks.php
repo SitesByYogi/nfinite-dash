@@ -53,7 +53,6 @@ $tasks = get_posts([
                 </p>
 
                 <!-- ✅ Editable Priority Dropdown -->
-                <!-- ✅ Editable Priority Dropdown -->
 <label for="task-priority-<?php echo esc_attr($task_id); ?>"><?php _e('Priority:', 'nfinite-dash'); ?></label>
 <select class="task-meta-dropdown" id="task-priority-<?php echo esc_attr($task_id); ?>" data-task-id="<?php echo esc_attr($task_id); ?>" data-meta-key="_task_priority">
     <option value="low" <?php selected($priority, 'low'); ?>>Low</option>

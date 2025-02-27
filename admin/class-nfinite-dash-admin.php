@@ -81,7 +81,7 @@ class Nfinite_Dash_Admin {
 	public function enqueue_scripts() {
 		wp_enqueue_script(
 			'nfinite-dash-admin',
-			plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-admin.js',
+			plugin_dir_url(__FILE__) . '/js/nfinite-dash-admin.js',
 			['jquery'],
 			'1.0',
 			true
@@ -92,6 +92,7 @@ class Nfinite_Dash_Admin {
 			'nonce'    => wp_create_nonce('task_manager_update_meta'),
 		]);		
 	}
+
 
 	/**
 	 * ✅ Add Custom Admin Menu for Nfinite Dashboard
@@ -109,6 +110,8 @@ class Nfinite_Dash_Admin {
 			2
 		);
 	}
+
+	
 
 	/**
 	 * ✅ Render the Admin Dashboard Page (Prevents Double Rendering)
@@ -131,3 +134,26 @@ class Nfinite_Dash_Admin {
 		}
 	}
 }
+
+function enqueue_my_projects_scripts() {
+    wp_enqueue_script('jquery'); // ✅ Ensure jQuery is loaded
+
+    // ✅ Load script for both backend (My Projects CPT) and frontend (Dashboard Projects)
+    wp_enqueue_script(
+        'nfinite-dash-my-projects',
+        plugins_url('admin/js/nfinite-dash-my-projects.js', dirname(__FILE__)), // ✅ Fix path
+        ['jquery'], 
+        time(), // ✅ Prevent caching
+        true
+    );
+
+    // ✅ Localize script for AJAX requests
+    wp_localize_script('nfinite-dash-my-projects', 'myProjectsAjax', [
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('my_projects_update_meta'),
+    ]);
+}
+
+// ✅ Load script for both backend & frontend
+add_action('admin_enqueue_scripts', 'enqueue_my_projects_scripts'); 
+add_action('wp_enqueue_scripts', 'enqueue_my_projects_scripts'); 

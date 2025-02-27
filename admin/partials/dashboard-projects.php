@@ -41,12 +41,12 @@ $projects = get_posts([
                 </h3>
 
                 <p><strong><?php _e('Status:', 'nfinite-dash'); ?></strong>
-                    <select class="project-status-dropdown" data-project-id="<?php echo esc_attr($project_id); ?>">
-                        <option value="not_started" <?php selected($status, 'not_started'); ?>>Not Started</option>
-                        <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
-                        <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
-                    </select>
-                </p>
+    <select class="project-status-dropdown" data-project-id="<?php echo esc_attr($project_id); ?>">
+        <option value="not_started" <?php selected($status, 'not_started'); ?>>Not Started</option>
+        <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
+        <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
+    </select>
+</p>
 
                 <?php if (!empty($links)): ?>
                     <ul class="project-links">
@@ -77,38 +77,4 @@ $projects = get_posts([
     <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="button"><?php _e('View All Projects', 'nfinite-dash'); ?></a>
 </div>
 
-<!-- ✅ JavaScript for AJAX Inline Editing (Priority Removed) -->
-<script>
-jQuery(document).ready(function ($) {
-    function updateProjectMeta(projectId, metaKey, metaValue) {
-        $.ajax({
-            url: '<?php echo admin_url('admin-ajax.php'); ?>',
-            type: 'POST',
-            data: {
-                action: 'update_project_meta',
-                project_id: projectId,
-                meta_key: metaKey,
-                meta_value: metaValue,
-                _ajax_nonce: '<?php echo wp_create_nonce("update_project_meta_nonce"); ?>'
-            },
-            success: function (response) {
-                if (response.success) {
-                    alert(metaKey.replace('_my_project_', '').replace('_', ' ') + ' updated successfully.');
-                } else {
-                    alert('Failed to update ' + metaKey.replace('_my_project_', '').replace('_', ' ') + '.');
-                }
-            },
-            error: function () {
-                alert('An error occurred while updating ' + metaKey.replace('_my_project_', '').replace('_', ' ') + '.');
-            }
-        });
-    }
 
-    $('.project-status-dropdown').on('change', function () {
-        var projectId = $(this).data('project-id');
-        var metaKey = '_my_project_status';
-        var metaValue = $(this).val();
-        updateProjectMeta(projectId, metaKey, metaValue);
-    });
-});
-</script>
