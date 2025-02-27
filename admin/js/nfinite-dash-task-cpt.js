@@ -1,5 +1,5 @@
 jQuery(document).ready(function ($) {
-    console.log("✅ Nfinite Dashboard Script Loaded");
+    console.log("✅ Nfinite Dashboard Task Manager Script Loaded");
 
     function updateTaskMeta(taskId, metaKey, metaValue) {
         if (!taskId || !metaKey) {
@@ -26,8 +26,7 @@ jQuery(document).ready(function ($) {
                     console.log(`🎯 Updated ${metaKey} successfully.`);
 
                     // ✅ Sync all dropdowns with the same task ID & meta key
-                    $(".task-meta-dropdown[data-task-id='" + taskId + "'][data-meta-key='" + metaKey + "']")
-                        .val(metaValue);
+                    $("[data-task-id='" + taskId + "'][data-meta-key='" + metaKey + "']").val(metaValue);
                 } else {
                     console.error(`❌ Failed to update ${metaKey}:`, response.data);
                     alert(`❌ Failed to update ${metaKey}`);
@@ -40,7 +39,8 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    $(document).on("change", ".task-meta-dropdown", function () {
+    // ✅ Ensure event listener is attached to the correct dropdown elements
+    $(document).on("change", ".task-status-dropdown", function () {
         let taskId = $(this).data("task-id");
         let metaKey = $(this).data("meta-key");
         let metaValue = $(this).val();

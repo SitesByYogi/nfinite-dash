@@ -282,21 +282,24 @@ public function filter_tasks($query) {
     public function populate_task_columns($column, $post_id) {
         $meta_value = get_post_meta($post_id, '_' . $column, true);
     
-        if ($column === 'task_due_date') {
-            echo esc_html($meta_value ? date('F j, Y', strtotime($meta_value)) : '—');
-        } elseif ($column === 'task_status' || $column === 'task_priority') {
-            echo '<select class="task-meta-dropdown" data-task-id="' . esc_attr($post_id) . '" data-meta-key="_' . esc_attr($column) . '">';
+        if ($column === 'task_status' || $column === 'task_priority') {
+            echo '<select class="task-status-dropdown" data-task-id="' . esc_attr($post_id) . '" data-meta-key="' . esc_attr($column) . '">';
     
-            $options = ($column === 'task_status') ? 
-                ['pending' => 'Pending', 'in_progress' => 'In Progress', 'complete' => 'Complete'] :
-                ['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'urgent' => 'Urgent'];
+            $options = ($column === 'task_status')
+                ? ['pending' => 'Pending', 'in_progress' => 'In Progress', 'complete' => 'Complete']
+                : ['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'urgent' => 'Urgent'];
     
             foreach ($options as $option_value => $option_label) {
                 echo '<option value="' . esc_attr($option_value) . '" ' . selected($meta_value, $option_value, false) . '>' . esc_html($option_label) . '</option>';
             }
+    
             echo '</select>';
         }
-    }    
+    
+        if ($column === 'task_due_date') {
+            echo esc_html($meta_value ? date('F j, Y', strtotime($meta_value)) : '—');
+        }
+    }      
     
     /**
      * ✅ Add "View Completed Tasks" Button
@@ -335,37 +338,40 @@ public function filter_tasks($query) {
  function task_manager_update_meta() {
     check_ajax_referer('task_manager_update_meta', '_ajax_nonce');
 
+    if (empty($_POST['task_id']) || empty($_POST['meta_key']) || !isset($_POST['meta_value'])) {
+        wp_send_json_error(['message' => '❌ Missing required parameters.', 'data' => $_POST]);
+    }
+
     $post_id = intval($_POST['task_id']);
-    $meta_key = sanitize_text_field($_POST['meta_key']);
+    $meta_key = '_' . ltrim(sanitize_text_field($_POST['meta_key']), '_'); // ✅ Ensure meta key starts with `_`
     $meta_value = sanitize_text_field($_POST['meta_value']);
 
-    // ✅ Debug AJAX Data
+    // ✅ Debug Logging
     error_log("🔄 Updating task meta - Task ID: {$post_id}, Meta Key: {$meta_key}, Meta Value: {$meta_value}");
 
-    // Ensure user has permission
     if (!current_user_can('edit_post', $post_id)) {
-        wp_send_json_error(['message' => '❌ Permission denied.']);
+        wp_send_json_error(['message' => '❌ Permission denied.', 'post_id' => $post_id]);
     }
 
-    // Ensure correct format for meta keys
-    $allowed_meta_keys = ['_task_status', '_task_priority', '_task_due_date'];
-    if (!in_array($meta_key, $allowed_meta_keys, true)) {
-        wp_send_json_error(['message' => '❌ Invalid meta key.']);
-    }
-
-    // ✅ Update metadata in database
     if (update_post_meta($post_id, $meta_key, $meta_value)) {
         error_log("✅ Successfully updated {$meta_key} to {$meta_value}");
         wp_send_json_success([
             'message' => '✅ Updated successfully.',
+            'post_id' => $post_id,
             'meta_key' => $meta_key,
             'meta_value' => $meta_value
         ]);
     } else {
         error_log("❌ Failed to update {$meta_key}");
-        wp_send_json_error(['message' => '❌ Failed to update.']);
+        wp_send_json_error([
+            'message' => '❌ Failed to update.',
+            'post_id' => $post_id,
+            'meta_key' => $meta_key,
+            'meta_value' => $meta_value
+        ]);
     }
 }
+
 
 
 // ✅ Properly closing this function to prevent syntax errors
@@ -376,14 +382,14 @@ public function filter_tasks($query) {
     public function enqueue_task_manager_scripts($hook) {
         $screen = get_current_screen();
     
-        // ✅ Ensure the script loads only on Task Manager admin pages
+        // ✅ Load script only on Task Manager pages
         if (in_array($hook, ['edit.php', 'post.php']) && $screen->post_type === 'task_manager_task') {
     
             wp_enqueue_script(
                 'nfinite-dash-task-cpt',
-                plugin_dir_url(__FILE__) . 'admin/js/nfinite-dash-task-cpt.js',
+                plugins_url('admin/js/nfinite-dash-task-cpt.js', dirname(__FILE__)), // ✅ Corrected path
                 ['jquery'],
-                time(), // ✅ Force fresh version
+                time(),
                 true
             );
     
@@ -393,6 +399,7 @@ public function filter_tasks($query) {
             ]);
         }
     }
+    
     
 }
 

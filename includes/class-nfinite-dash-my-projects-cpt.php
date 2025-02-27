@@ -325,20 +325,18 @@ public function populate_project_columns($column, $post_id) {
 public function update_meta_via_ajax() {
     check_ajax_referer('my_projects_update_meta', '_ajax_nonce');
 
-    // 🛑 Check if required fields are present
     if (empty($_POST['post_id']) || empty($_POST['meta_key']) || !isset($_POST['meta_value'])) {
         wp_send_json_error(['message' => 'Missing required parameters.', 'data' => $_POST]);
     }
 
     $post_id = intval($_POST['post_id']);
-    $meta_key = sanitize_text_field($_POST['meta_key']);
+    $meta_key = '_' . ltrim(sanitize_text_field($_POST['meta_key']), '_'); // Ensure meta key starts with `_`
     $meta_value = sanitize_text_field($_POST['meta_value']);
 
     if (!current_user_can('edit_post', $post_id)) {
         wp_send_json_error(['message' => 'Permission denied.', 'post_id' => $post_id]);
     }
 
-    // 🛑 Debugging Output
     if (update_post_meta($post_id, $meta_key, $meta_value)) {
         wp_send_json_success([
             'message' => 'Updated successfully.',
@@ -347,9 +345,15 @@ public function update_meta_via_ajax() {
             'meta_value' => $meta_value
         ]);
     } else {
-        wp_send_json_error(['message' => 'Failed to update.', 'post_id' => $post_id, 'meta_key' => $meta_key, 'meta_value' => $meta_value]);
+        wp_send_json_error([
+            'message' => 'Failed to update.',
+            'post_id' => $post_id,
+            'meta_key' => $meta_key,
+            'meta_value' => $meta_value
+        ]);
     }
 }
+
 
 
 function update_project_meta() {
