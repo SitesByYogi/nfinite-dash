@@ -140,7 +140,7 @@ class Nfinite_Dash_My_Projects_CPT {
         ?>
         <p>
             <label for="project_status"><?php _e('Project Status:', 'my-projects'); ?></label>
-            <select name="_project_status" id="project_status">
+            <select id="project_status" name="_project_status" data-project-id="<?php echo esc_attr($post->ID); ?>" data-meta-key="project_status">
                 <option value="not_started" <?php selected($status, 'not_started'); ?>>Not Started</option>
                 <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
                 <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
@@ -148,7 +148,7 @@ class Nfinite_Dash_My_Projects_CPT {
         </p>
         <p>
             <label for="project_priority"><?php _e('Priority:', 'my-projects'); ?></label>
-            <select name="_project_priority" id="project_priority">
+            <select id="project_priority" name="_project_priority" data-project-id="<?php echo esc_attr($post->ID); ?>" data-meta-key="project_priority">
                 <option value="low" <?php selected($priority, 'low'); ?>>Low</option>
                 <option value="medium" <?php selected($priority, 'medium'); ?>>Medium</option>
                 <option value="high" <?php selected($priority, 'high'); ?>>High</option>
@@ -156,7 +156,7 @@ class Nfinite_Dash_My_Projects_CPT {
             </select>
         </p>
         <?php
-    }    
+    }       
 
     /**
      * ✅ Project Links Meta Box Callback (Similar to My Notes Links)
@@ -294,20 +294,8 @@ public function populate_project_columns($column, $post_id) {
 
         echo '</select>';
     }
-
-    if ($column === 'project_links') {
-        $links = get_post_meta($post_id, '_my_project_links', true); // ✅ Use $post_id instead of $project_id
-        if (!empty($links)) {
-            echo '<ul>';
-            foreach ($links as $link) {
-                echo '<li><a href="' . esc_url($link['url']) . '" target="_blank">' . esc_html($link['text']) . '</a></li>';
-            }
-            echo '</ul>';
-        } else {
-            echo '<em>' . __('No links added.', 'my-projects') . '</em>';
-        }
-    }
 }
+
 
     /**
      * ✅ Sorting Logic for Columns
@@ -337,20 +325,32 @@ public function populate_project_columns($column, $post_id) {
 public function update_meta_via_ajax() {
     check_ajax_referer('my_projects_update_meta', '_ajax_nonce');
 
+    // 🛑 Check if required fields are present
+    if (empty($_POST['post_id']) || empty($_POST['meta_key']) || !isset($_POST['meta_value'])) {
+        wp_send_json_error(['message' => 'Missing required parameters.', 'data' => $_POST]);
+    }
+
     $post_id = intval($_POST['post_id']);
     $meta_key = sanitize_text_field($_POST['meta_key']);
     $meta_value = sanitize_text_field($_POST['meta_value']);
 
     if (!current_user_can('edit_post', $post_id)) {
-        wp_send_json_error(['message' => 'Permission denied.']);
+        wp_send_json_error(['message' => 'Permission denied.', 'post_id' => $post_id]);
     }
 
+    // 🛑 Debugging Output
     if (update_post_meta($post_id, $meta_key, $meta_value)) {
-        wp_send_json_success(['message' => 'Updated successfully.']);
+        wp_send_json_success([
+            'message' => 'Updated successfully.',
+            'post_id' => $post_id,
+            'meta_key' => $meta_key,
+            'meta_value' => $meta_value
+        ]);
     } else {
-        wp_send_json_error(['message' => 'Failed to update.']);
+        wp_send_json_error(['message' => 'Failed to update.', 'post_id' => $post_id, 'meta_key' => $meta_key, 'meta_value' => $meta_value]);
     }
 }
+
 
 function update_project_meta() {
     // Security check
@@ -380,20 +380,18 @@ function update_project_meta() {
 public function enqueue_inline_edit_scripts($hook) {
     $screen = get_current_screen();
 
-    if ($hook === 'post.php' && $screen->post_type === 'my_projects') {
-        // ✅ Ensure jQuery is loaded before our script
-        wp_enqueue_script('jquery');
+    // ✅ Ensure script loads on the correct admin pages
+    if (in_array($hook, ['edit.php', 'post.php', 'index.php']) || $screen->post_type === 'my_projects') {
+        wp_enqueue_script('jquery'); // ✅ Ensure jQuery loads first
 
-        // ✅ Correct script path and dependencies
         wp_enqueue_script(
             'nfinite-dash-my-projects',
-            plugins_url('admin/js/nfinite-dash-my-projects.js', dirname(__FILE__)), // ✅ Corrected path
-            ['jquery'], // ✅ jQuery as a dependency
-            time(), // ✅ Prevent caching
+            plugins_url('admin/js/nfinite-dash-my-projects.js', dirname(__FILE__)), 
+            ['jquery'], // ✅ Define jQuery as a dependency
+            time(), 
             true
         );
 
-        // ✅ Localize AJAX data for secure requests
         wp_localize_script('nfinite-dash-my-projects', 'myProjectsAjax', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('my_projects_update_meta'),

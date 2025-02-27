@@ -1,9 +1,6 @@
 jQuery(document).ready(function ($) {
     console.log("✅ Nfinite Dashboard Projects Script Loaded");
 
-    /**
-     * ✅ Function to update Project Metadata via AJAX
-     */
     function updateProjectMeta(projectId, metaKey, metaValue) {
         if (!projectId || !metaKey) {
             console.error("❌ Missing projectId or metaKey for AJAX update.");
@@ -28,12 +25,13 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     console.log(`🎯 Updated ${metaKey} successfully.`);
 
-                    // ✅ Sync all dropdowns with the same project ID across pages
-                    $(".project-status-dropdown[data-project-id='" + projectId + "']").val(metaValue);
+                    // ✅ Sync all dropdowns across ALL sections
+                    $(".project-status-dropdown[data-project-id='" + projectId + "'][data-meta-key='" + metaKey + "']").val(metaValue);
                     $(".project-meta-dropdown[data-project-id='" + projectId + "'][data-meta-key='" + metaKey + "']").val(metaValue);
+                    $("#project_status, #project_priority").val(metaValue);
                 } else {
                     console.error(`❌ Failed to update ${metaKey}:`, response.data);
-                    alert(`❌ Failed to update ${metaKey}`);
+                    alert(`❌ Failed to update ${metaKey}. Server message: ${response.data.message}`);
                 }
             },
             error: function (xhr, status, error) {
@@ -43,20 +41,9 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    /**
-     * ✅ Event Listener for Dropdown Changes
-     */
-    $(document).on("change", ".project-status-dropdown", function () {
-        let projectId = $(this).data("project-id");
-        let metaKey = "_my_project_status";
-        let metaValue = $(this).val();
-
-        updateProjectMeta(projectId, metaKey, metaValue);
-    });
-
-    $(document).on("change", "#project_status, #project_priority", function () {
-        let projectId = $("#post_ID").val();
-        let metaKey = $(this).attr("name");
+    $(document).on("change", ".project-status-dropdown, .project-meta-dropdown, #project_status, #project_priority", function () {
+        let projectId = $(this).data("project-id") || $("#post_ID").val();
+        let metaKey = $(this).attr("name") || $(this).data("meta-key");
         let metaValue = $(this).val();
 
         updateProjectMeta(projectId, metaKey, metaValue);

@@ -7,22 +7,17 @@
  * @package Nfinite_Dash
  */
 
-// Fetch Active Projects (Include "Not Started" and "In Progress", Exclude "Completed")
+// Fetch Active Projects (Exclude Completed Projects)
 $projects = get_posts([
     'post_type'      => 'my_projects',
-    'posts_per_page' => 6, // Show up to 6 projects
+    'posts_per_page' => 6,
     'orderby'        => 'date',
     'order'          => 'DESC',
     'meta_query'     => [
-        'relation' => 'OR', // ✅ Ensures we include projects with "not_started" & "in_progress"
         [
-            'key'     => '_my_project_status',
+            'key'     => '_project_status',
             'value'   => 'completed',
-            'compare' => '!=', // ✅ Exclude completed projects
-        ],
-        [
-            'key'     => '_my_project_status',
-            'compare' => 'NOT EXISTS', // ✅ Include projects where status is NOT set
+            'compare' => '!=',
         ],
     ],
 ]);
@@ -33,9 +28,10 @@ $projects = get_posts([
     <?php if ($projects): ?>
         <?php foreach ($projects as $project): 
             $project_id  = $project->ID;
-            $status      = get_post_meta($project_id, '_my_project_status', true) ?: 'not_started'; // ✅ Default to "not_started"
+            $status      = get_post_meta($project_id, '_project_status', true);
+            $priority    = get_post_meta($project_id, '_project_priority', true);
             $links       = get_post_meta($project_id, '_my_project_links', true);
-            ?>
+        ?>
 
             <div class="project-card">
                 <h3 class="project-title">
@@ -45,10 +41,19 @@ $projects = get_posts([
                 </h3>
 
                 <p><strong><?php _e('Status:', 'nfinite-dash'); ?></strong>
-                    <select class="project-status-dropdown" data-project-id="<?php echo esc_attr($project_id); ?>">
+                    <select class="project-status-dropdown" data-project-id="<?php echo esc_attr($project_id); ?>" data-meta-key="_project_status">
                         <option value="not_started" <?php selected($status, 'not_started'); ?>>Not Started</option>
                         <option value="in_progress" <?php selected($status, 'in_progress'); ?>>In Progress</option>
                         <option value="completed" <?php selected($status, 'completed'); ?>>Completed</option>
+                    </select>
+                </p>
+
+                <p><strong><?php _e('Priority:', 'nfinite-dash'); ?></strong>
+                    <select class="project-status-dropdown" data-project-id="<?php echo esc_attr($project_id); ?>" data-meta-key="_project_priority">
+                        <option value="low" <?php selected($priority, 'low'); ?>>Low</option>
+                        <option value="medium" <?php selected($priority, 'medium'); ?>>Medium</option>
+                        <option value="high" <?php selected($priority, 'high'); ?>>High</option>
+                        <option value="urgent" <?php selected($priority, 'urgent'); ?>>Urgent</option>
                     </select>
                 </p>
 
