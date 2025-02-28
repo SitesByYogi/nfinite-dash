@@ -52,6 +52,7 @@ class Nfinite_Dash_Client_CPT {
         add_action('save_post', array($this, 'save_meta_box_data'));
         add_action('add_meta_boxes', array($this, 'add_client_notes_meta_box'));
         add_action('save_post', array($this, 'save_client_notes_meta_box_data'));
+        add_action('pre_get_posts', array($this, 'sort_clients_alphabetically'));
     
         // ✅ Custom Columns in Client List
         add_filter('manage_client_posts_columns', array($this, 'add_custom_columns'));
@@ -123,6 +124,16 @@ class Nfinite_Dash_Client_CPT {
             'high'
         );
     }
+
+    /**
+ * ✅ Sort Clients Alphabetically in Admin Table
+ */
+public function sort_clients_alphabetically($query) {
+    if (is_admin() && $query->is_main_query() && $query->get('post_type') === 'client') {
+        $query->set('orderby', 'title'); // ✅ Order by title
+        $query->set('order', 'ASC'); // ✅ Ascending order (A-Z)
+    }
+}
 
     /**
      * ✅ Meta Box Callback for Client Details.
