@@ -48,6 +48,9 @@ if (!class_exists('Nfinite_Dash_My_Notes_CPT')) { // ✅ Prevent duplicate decla
             add_action('init', array($this, 'register_post_type'));
             add_action('add_meta_boxes', array($this, 'add_my_notes_meta_boxes'));
             add_action('save_post', array($this, 'save_my_notes_meta_box_data'));
+            add_action('add_meta_boxes', array($this, 'add_client_assignment_meta_box'));
+            add_action('save_post', array($this, 'save_client_assignment_meta_box_data'));
+
 
             // ✅ Admin Table Columns
             add_filter('manage_my_notes_posts_columns', array($this, 'add_my_notes_columns'));
@@ -179,6 +182,7 @@ if (!class_exists('Nfinite_Dash_My_Notes_CPT')) { // ✅ Prevent duplicate decla
         public function add_my_notes_columns($columns) {
             $columns['featured'] = __('Featured', 'nfinite-dash');
             $columns['notes_links'] = __('Notes Links', 'nfinite-dash');
+            $columns['assigned_client'] = __('Assigned Client', 'nfinite-dash'); // ✅ Add new column
             return $columns;
         }
 
@@ -203,7 +207,86 @@ if (!class_exists('Nfinite_Dash_My_Notes_CPT')) { // ✅ Prevent duplicate decla
                     echo '<em>' . __('No links added.', 'nfinite-dash') . '</em>';
                 }
             }
+
+            if ($column === 'assigned_client') {
+                $client_id = get_post_meta($post_id, '_assigned_client', true);
+                if ($client_id) {
+                    echo '<a href="' . get_edit_post_link($client_id) . '">' . get_the_title($client_id) . '</a>';
+                } else {
+                    echo __('No Client Assigned', 'nfinite-dash');
+                }
+            }
         }
+
+        /**
+ * ✅ Add Meta Box for Assigning Notes to Clients
+ */
+public function add_client_assignment_meta_box() {
+    add_meta_box(
+        'client_assignment_meta_box',
+        __('Assign to Client', 'nfinite-dash'),
+        array($this, 'render_client_assignment_meta_box'),
+        'my_notes',
+        'side',
+        'default'
+    );
+}
+
+/**
+ * ✅ Render Client Assignment Meta Box
+ */
+public function render_client_assignment_meta_box($post) {
+    // Get the currently assigned client ID
+    $assigned_client = get_post_meta($post->ID, '_assigned_client', true);
+
+    // Fetch all clients
+    $clients = get_posts([
+        'post_type'      => 'client',
+        'posts_per_page' => -1,
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+    ]);
+
+    // Security nonce
+    wp_nonce_field('save_client_assignment_meta_box', 'client_assignment_nonce');
+
+    echo '<label for="assigned_client">' . __('Select a Client:', 'nfinite-dash') . '</label>';
+    echo '<select name="assigned_client" id="assigned_client">';
+    echo '<option value="">' . __('— No Client Assigned —', 'nfinite-dash') . '</option>';
+
+    foreach ($clients as $client) {
+        echo '<option value="' . esc_attr($client->ID) . '" ' . selected($assigned_client, $client->ID, false) . '>';
+        echo esc_html($client->post_title);
+        echo '</option>';
+    }
+
+    echo '</select>';
+}
+
+/**
+ * ✅ Save Assigned Client Meta Box Data
+ */
+public function save_client_assignment_meta_box_data($post_id) {
+    // Security check
+    if (!isset($_POST['client_assignment_nonce']) || !wp_verify_nonce($_POST['client_assignment_nonce'], 'save_client_assignment_meta_box')) {
+        return;
+    }
+
+    // Prevent autosave issues
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    // Ensure the user has permission
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    // Save the selected client
+    if (isset($_POST['assigned_client'])) {
+        update_post_meta($post_id, '_assigned_client', sanitize_text_field($_POST['assigned_client']));
+    }
+}
 
         /**
  * ✅ Render Notes Links Meta Box
