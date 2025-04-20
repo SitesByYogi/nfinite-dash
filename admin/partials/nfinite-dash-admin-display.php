@@ -13,9 +13,9 @@ $current_date_time = date('F j, Y - g:i A T');
 
     <!-- ✅ Quick Links -->
     <div class="dashboard-quick-links">
-        <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
-        <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
-        <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
+        <a href="<?php echo admin_url('edit.php?post_type=my_projects&page=my-projects-cards'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
+        <a href="<?php echo admin_url('edit.php?post_type=my_notes&page=notes-cards-view'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
+        <a href="<?php echo admin_url('edit.php?post_type=task_manager_task&page=nfinite-task-cards'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
         <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="quick-link"><?php _e('Meetings', 'nfinite-dash'); ?></a>
         <a href="<?php echo admin_url('edit.php?post_type=client'); ?>" class="quick-link"><?php _e('Clients', 'nfinite-dash'); ?></a>
         <a href="<?php echo admin_url('profile.php'); ?>" class="quick-link"><?php _e('My Profile', 'nfinite-dash'); ?></a>
