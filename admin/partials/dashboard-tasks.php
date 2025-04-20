@@ -82,10 +82,10 @@ $tasks = get_posts([
         <p><?php _e('No active tasks found.', 'nfinite-dash'); ?></p>
     <?php endif; ?>
 </div>
-
+<br>
 <div class="tasks-buttons">
     <a href="<?php echo admin_url('post-new.php?post_type=task_manager_task'); ?>" class="button button-primary"><?php _e('Add New Task', 'nfinite-dash'); ?></a>
-    <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="button"><?php _e('View All Tasks', 'nfinite-dash'); ?></a>
+    <a href="<?php echo admin_url('edit.php?post_type=task_manager_task&page=nfinite-task-cards'); ?>" class="button"><?php _e('View All Tasks', 'nfinite-dash'); ?></a>
 </div>
 
 <!-- ✅ JavaScript for AJAX Inline Editing -->

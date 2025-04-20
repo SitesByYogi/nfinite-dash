@@ -35,7 +35,7 @@ function nfinite_dashboard_admin_menu() {
         __('Tasks', 'nfinite-dash'),
         __('Tasks', 'nfinite-dash'),
         'manage_options',
-        'edit.php?post_type=task_manager_task'
+        'edit.php?post_type=task_manager_task&page=nfinite-task-cards'
     );
 
     add_submenu_page(
@@ -88,7 +88,7 @@ function nfinite_dashboard_toolbar_links($wp_admin_bar) {
         'id'     => 'task-manager',
         'parent' => 'nfinite-dashboard',
         'title'  => 'Tasks',
-        'href'   => admin_url('edit.php?post_type=task_manager_task'),
+        'href'   => admin_url('edit.php?post_type=task_manager_task&page=nfinite-task-cards'),
     ]);
 
     // ✅ Add Clients as a Submenu

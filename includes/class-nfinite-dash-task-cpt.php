@@ -49,6 +49,7 @@ class Nfinite_Dash_Task_CPT {
         add_action('add_meta_boxes', array($this, 'add_task_meta_boxes'));
         add_action('save_post', array($this, 'save_task_meta_box_data'));
         add_action('save_post_task_manager_task', array($this, 'save_task_meta_box_data'));
+        add_action('admin_menu', array($this, 'register_custom_task_dashboard'));
 
         add_action('admin_enqueue_scripts', array($this, 'enqueue_task_manager_scripts'));
 
@@ -67,6 +68,27 @@ class Nfinite_Dash_Task_CPT {
 
         // ✅ Add Completed Tasks Button
         add_action('restrict_manage_posts', array($this, 'add_completed_tasks_button'));
+    }
+
+    /**
+     * ✅ Register Custom Task Dashboard
+     */
+    public function register_custom_task_dashboard() {
+        add_submenu_page(
+            'edit.php?post_type=task_manager_task',
+            __('Nfinite Task Cards', 'task-manager'),
+            __('Card View', 'task-manager'),
+            'edit_posts',
+            'nfinite-task-cards',
+            array($this, 'render_task_card_dashboard')
+        );
+    }
+
+    /**
+     * ✅ Render Task Card Dashboard
+     */
+    public function render_task_card_dashboard() {
+        include dirname(__FILE__, 2) . '/admin/views/task-cards-dashboard.php';
     }
 
     /**
@@ -382,12 +404,23 @@ public function filter_tasks($query) {
     public function enqueue_task_manager_scripts($hook) {
         $screen = get_current_screen();
     
-        // ✅ Load script only on Task Manager pages
-        if (in_array($hook, ['edit.php', 'post.php']) && $screen->post_type === 'task_manager_task') {
+        $is_task_cpt = in_array($hook, ['edit.php', 'post.php']) && $screen->post_type === 'task_manager_task';
+        $is_card_view_page = isset($_GET['page']) && $_GET['page'] === 'nfinite-task-cards';
     
+        if ($is_task_cpt || $is_card_view_page) {
+    
+            // ✅ Enqueue Admin CSS
+            wp_enqueue_style(
+                'nfinite-dash-admin-style',
+                plugins_url('admin/css/nfinite-dash-admin.css', dirname(__FILE__)),
+                [],
+                time()
+            );
+    
+            // ✅ Enqueue JavaScript
             wp_enqueue_script(
                 'nfinite-dash-task-cpt',
-                plugins_url('admin/js/nfinite-dash-task-cpt.js', dirname(__FILE__)), // ✅ Corrected path
+                plugins_url('admin/js/nfinite-dash-task-cpt.js', dirname(__FILE__)),
                 ['jquery'],
                 time(),
                 true
@@ -398,7 +431,7 @@ public function filter_tasks($query) {
                 'nonce'    => wp_create_nonce('task_manager_update_meta'),
             ]);
         }
-    }
+    }    
     
     
 }

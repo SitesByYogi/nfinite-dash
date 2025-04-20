@@ -81,6 +81,8 @@ $projects = get_posts([
     <?php endif; ?>
 </div>
 
+<br>
+<!-- View Buttons for Notes Section -->
 <div class="projects-buttons">
     <a href="<?php echo admin_url('post-new.php?post_type=my_projects'); ?>" class="button button-primary"><?php _e('Add New Project', 'nfinite-dash'); ?></a>
     <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="button"><?php _e('View All Projects', 'nfinite-dash'); ?></a>
