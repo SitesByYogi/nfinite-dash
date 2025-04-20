@@ -50,6 +50,8 @@ if (!class_exists('Nfinite_Dash_My_Notes_CPT')) { // ✅ Prevent duplicate decla
             add_action('save_post', array($this, 'save_my_notes_meta_box_data'));
             add_action('add_meta_boxes', array($this, 'add_client_assignment_meta_box'));
             add_action('save_post', array($this, 'save_client_assignment_meta_box_data'));
+            add_action('admin_menu', [$this, 'register_notes_cards_page']);
+
 
 
             // ✅ Admin Table Columns
@@ -88,6 +90,28 @@ if (!class_exists('Nfinite_Dash_My_Notes_CPT')) { // ✅ Prevent duplicate decla
 
             register_post_type('my_notes', $args);
         }
+
+        /**
+         * ✅ Register Notes Cards Page
+         */
+            public function register_notes_cards_page() {
+            add_submenu_page(
+                'edit.php?post_type=my_notes',
+                __('Notes – Card View', 'nfinite-dash'),
+                __('Card View', 'nfinite-dash'),
+                'edit_posts',
+                'notes-cards-view',
+                [$this, 'render_notes_cards_view']
+            );
+        }
+
+        /**
+         * ✅ Render Notes Cards View
+         */        
+        public function render_notes_cards_view() {
+            include dirname(__FILE__, 2) . '/admin/views/notes-cards-dashboard.php';
+        }
+        
 
         /**
          * ✅ Modify Notes Archive Query to Prioritize Featured Notes

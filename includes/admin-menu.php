@@ -43,7 +43,7 @@ function nfinite_dashboard_admin_menu() {
         __('My Notes', 'nfinite-dash'),
         __('My Notes', 'nfinite-dash'),
         'manage_options',
-        'edit.php?post_type=my_notes'
+        'edit.php?post_type=my_notes&page=notes-cards-view'
     );
 
     add_submenu_page(
@@ -112,7 +112,7 @@ function nfinite_dashboard_toolbar_links($wp_admin_bar) {
         'id'     => 'my-notes',
         'parent' => 'nfinite-dashboard',
         'title'  => 'My Notes',
-        'href'   => admin_url('edit.php?post_type=my_notes'),
+        'href'   => admin_url('edit.php?post_type=my_notes&page=notes-cards-view'),
     ]);
 
     // ✅ Add My Projects as a Submenu
