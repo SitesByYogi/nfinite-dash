@@ -51,7 +51,7 @@ function nfinite_dashboard_admin_menu() {
         __('My Projects', 'nfinite-dash'),
         __('My Projects', 'nfinite-dash'),
         'manage_options',
-        'edit.php?post_type=my_projects'
+        'edit.php?post_type=my_projects&page=my-projects-cards'
     );
 
     add_submenu_page(
@@ -120,7 +120,7 @@ function nfinite_dashboard_toolbar_links($wp_admin_bar) {
         'id'     => 'my-projects',
         'parent' => 'nfinite-dashboard',
         'title'  => 'My Projects',
-        'href'   => admin_url('edit.php?post_type=my_projects'),
+        'href'   => admin_url('edit.php?post_type=my_projects&page=my-projects-cards'),
     ]);
 
     // ✅ Add External Links Under My Notes

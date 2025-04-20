@@ -47,6 +47,8 @@ class Nfinite_Dash_My_Projects_CPT {
         add_action('init', array($this, 'register_taxonomies'));
         add_action('add_meta_boxes', array($this, 'add_project_meta_boxes'));
         add_action('save_post_my_projects', array($this, 'save_project_meta_box_data'));
+        add_action('admin_menu', [$this, 'register_my_projects_cards_page']);
+
 
         // ✅ Admin Table Columns
         add_filter('manage_my_projects_posts_columns', array($this, 'add_project_columns'));
@@ -59,6 +61,29 @@ class Nfinite_Dash_My_Projects_CPT {
         add_action('wp_ajax_my_projects_update_meta', array($this, 'update_meta_via_ajax'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_inline_edit_scripts'));
     }
+
+    /**
+     * ✅ Register My Projects Admin Page
+     */
+    public function register_my_projects_cards_page() {
+    add_submenu_page(
+        'edit.php?post_type=my_projects',
+        __('My Projects – Card View', 'nfinite-dash'),
+        __('Card View', 'nfinite-dash'),
+        'edit_posts',
+        'my-projects-cards',
+        [$this, 'render_my_projects_cards_view']
+    );
+}
+
+    /**
+     * ✅ Render My Projects Cards View
+     */
+    public function render_my_projects_cards_view() {
+        include dirname(__FILE__, 2) . '/admin/views/my-projects-cards.php';
+    }
+    
+
 
     /**
      * ✅ Register My Projects Custom Post Type
