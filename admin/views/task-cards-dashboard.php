@@ -137,3 +137,35 @@ $completed_tasks = get_posts([
     </tbody>
 </table>
 </div>
+
+<script>
+jQuery(document).ready(function ($) {
+    $(document).on("change", ".task-meta-dropdown", function () {
+        const taskId = $(this).data("task-id");
+        const metaKey = $(this).data("meta-key");
+        const metaValue = $(this).val();
+
+        $.ajax({
+            url: taskManagerAjax.ajax_url,
+            type: "POST",
+            data: {
+                action: "task_manager_update_meta",
+                task_id: taskId,
+                meta_key: metaKey,
+                meta_value: metaValue,
+                _ajax_nonce: taskManagerAjax.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    console.log("✅ Updated", metaKey, "to", metaValue);
+                } else {
+                    console.error("❌ AJAX Response Error:", response);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("❌ AJAX Failed:", error);
+            }
+        });
+    });
+});
+</script>
