@@ -47,7 +47,8 @@ usort($tasks, function ($a, $b) {
             $priority   = get_post_meta($task_id, '_task_priority', true);
             $status     = get_post_meta($task_id, '_task_status', true);
         ?>
-            <div class="task-card">
+            <?php $priority_class = 'priority-' . strtolower($priority); ?>
+            <div class="task-card <?php echo esc_attr($priority_class); ?>">
                 <h3 class="task-title">
                     <a href="<?php echo get_edit_post_link($task_id); ?>">
                         <?php echo esc_html($task->post_title); ?>
