@@ -31,7 +31,7 @@ usort($tasks, function ($a, $b) {
 });
 
 // ✅ Optional: limit to top 6 after sorting | set to show all
-$tasks = array_slice($tasks, 0, 0);
+// $tasks = array_slice($tasks, 0, 6);
 
         if ($tasks) {
             foreach ($tasks as $task) {
