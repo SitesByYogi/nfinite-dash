@@ -10,7 +10,7 @@
 // Fetch Active Tasks (Exclude Completed Tasks)
 $tasks = get_posts([
     'post_type'      => 'task_manager_task',
-    'posts_per_page' => 6,
+    'posts_per_page' => -1, // get all for now, limit after sorting
     'meta_query'     => [
         'relation' => 'OR',
         [
@@ -24,7 +24,6 @@ $tasks = get_posts([
         ],
     ],
 ]);
-
 ?>
 <div class="dashboard-tasks-grid">
     <?php if ($tasks): ?>
