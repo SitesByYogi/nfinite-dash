@@ -30,8 +30,8 @@ usort($tasks, function ($a, $b) {
     return ($priority_map[$b_priority] ?? 0) <=> ($priority_map[$a_priority] ?? 0);
 });
 
-// ✅ Optional: limit to top 6 after sorting
-$tasks = array_slice($tasks, 0, 6);
+// ✅ Optional: limit to top 6 after sorting | set to show all
+$tasks = array_slice($tasks, 0, 0);
 
         if ($tasks) {
             foreach ($tasks as $task) {
