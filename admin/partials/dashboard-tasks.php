@@ -9,21 +9,32 @@
 
 // Fetch Active Tasks (Exclude Completed Tasks)
 $tasks = get_posts([
-    'post_type'      => 'task_manager_task',
-    'posts_per_page' => -1, // get all for now, limit after sorting
-    'meta_query'     => [
+    'post_type' => 'task_manager_task',
+    'posts_per_page' => -1,
+    'meta_query' => [
         'relation' => 'OR',
         [
-            'key'     => '_task_status',
-            'value'   => ['pending', 'in_progress'],
-            'compare' => 'IN',
+            'key' => '_task_status',
+            'value' => ['pending', 'in_progress'],
+            'compare' => 'IN'
         ],
         [
-            'key'     => '_task_status',
-            'compare' => 'NOT EXISTS',
-        ],
-    ],
+            'key' => '_task_status',
+            'compare' => 'NOT EXISTS'
+        ]
+    ]
 ]);
+
+// ✅ Sort by Priority: urgent > high > medium > low
+usort($tasks, function ($a, $b) {
+    $priority_map = ['urgent' => 4, 'high' => 3, 'medium' => 2, 'low' => 1];
+
+    $a_priority = get_post_meta($a->ID, '_task_priority', true);
+    $b_priority = get_post_meta($b->ID, '_task_priority', true);
+
+    return ($priority_map[$b_priority] ?? 0) <=> ($priority_map[$a_priority] ?? 0);
+});
+
 ?>
 <div class="dashboard-tasks-grid">
     <?php if ($tasks): ?>
