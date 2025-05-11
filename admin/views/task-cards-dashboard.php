@@ -4,21 +4,21 @@
     <div class="dashboard-tasks-grid">
         <?php
         $tasks = get_posts([
-            'post_type' => 'task_manager_task',
-            'posts_per_page' => -1,
-            'meta_query' => [
-                'relation' => 'OR',
-                [
-                    'key' => '_task_status',
-                    'value' => ['pending', 'in_progress'],
-                    'compare' => 'IN'
-                ],
-                [
-                    'key' => '_task_status',
-                    'compare' => 'NOT EXISTS'
-                ]
-            ]
-        ]);
+    'post_type' => 'task_manager_task',
+    'posts_per_page' => -1,
+    'meta_query' => [
+        'relation' => 'OR',
+        [
+            'key' => '_task_status',
+            'value' => ['pending', 'in_progress'],
+            'compare' => 'IN'
+        ],
+        [
+            'key' => '_task_status',
+            'compare' => 'NOT EXISTS'
+        ]
+    ]
+]);
 
         if ($tasks) {
             foreach ($tasks as $task) {
