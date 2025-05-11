@@ -156,6 +156,26 @@
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
 }
 
+.task-card.priority-urgent {
+    background-color: #ffe5e5;
+    border-left: 4px solid #d10000;
+}
+
+.task-card.priority-high {
+    background-color: #fff2d6;
+    border-left: 4px solid #ff8c00;
+}
+
+.task-card.priority-medium {
+    background-color: #e6f7ff;
+    border-left: 4px solid #0073aa;
+}
+
+.task-card.priority-low {
+    background-color: #f4f4f4;
+    border-left: 4px solid #999999;
+}
+
 .task-title {
     font-size: 18px;
     font-weight: bold;
