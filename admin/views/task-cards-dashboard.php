@@ -43,7 +43,10 @@ usort($tasks, function ($a, $b) {
                 $priority    = get_post_meta($task_id, '_task_priority', true);
                 $status      = get_post_meta($task_id, '_task_status', true);
                 ?>
-                <?php $priority_class = 'priority-' . strtolower($priority); ?>
+                <?php $priority    = get_post_meta($task_id, '_task_priority', true);
+                      $priority    = $priority ?: 'medium';
+                      $priority_class = 'priority-' . strtolower($priority);
+                      ?>
                 <div class="task-card <?php echo esc_attr($priority_class); ?>">
 
                     <h3 class="task-title">
