@@ -68,7 +68,7 @@ $notes = get_posts([
 <!-- Notes Buttons -->
 <div class="notes-buttons">
     <a href="<?php echo admin_url('post-new.php?post_type=my_notes'); ?>" class="button button-primary"><?php _e('Add New Note', 'nfinite-dash'); ?></a>
-    <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="button"><?php _e('View All Notes', 'nfinite-dash'); ?></a>
+    <a href="<?php echo admin_url('edit.php?post_type=my_notes&page=notes-cards-view'); ?>" class="button"><?php _e('View All Notes', 'nfinite-dash'); ?></a>
 </div>
 
 

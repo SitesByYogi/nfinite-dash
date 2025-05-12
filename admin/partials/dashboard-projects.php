@@ -29,11 +29,15 @@ $projects = get_posts([
         <?php foreach ($projects as $project): 
             $project_id  = $project->ID;
             $status      = get_post_meta($project_id, '_project_status', true);
-            $priority    = get_post_meta($project_id, '_project_priority', true);
+            $priority = get_post_meta($project_id, '_project_priority', true);
+            $priority = $priority ?: 'medium'; // fallback for unset priorities
+            $priority_class = 'priority-' . strtolower($priority);
+
             $links       = get_post_meta($project_id, '_my_project_links', true);
         ?>
 
-            <div class="project-card">
+            <?php $priority_class = 'priority-' . strtolower($priority); ?> 
+            <div class="project-card <?php echo esc_attr($priority_class); ?>">
                 <h3 class="project-title">
                     <a href="<?php echo get_edit_post_link($project_id); ?>">
                         <?php echo esc_html($project->post_title); ?>

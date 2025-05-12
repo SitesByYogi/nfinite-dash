@@ -4,21 +4,34 @@
     <div class="dashboard-tasks-grid">
         <?php
         $tasks = get_posts([
-            'post_type' => 'task_manager_task',
-            'posts_per_page' => -1,
-            'meta_query' => [
-                'relation' => 'OR',
-                [
-                    'key' => '_task_status',
-                    'value' => ['pending', 'in_progress'],
-                    'compare' => 'IN'
-                ],
-                [
-                    'key' => '_task_status',
-                    'compare' => 'NOT EXISTS'
-                ]
-            ]
-        ]);
+    'post_type'      => 'task_manager_task',
+    'posts_per_page' => -1, // get all for now, limit after sorting
+    'meta_query'     => [
+        'relation' => 'OR',
+        [
+            'key'     => '_task_status',
+            'value'   => ['pending', 'in_progress'],
+            'compare' => 'IN',
+        ],
+        [
+            'key'     => '_task_status',
+            'compare' => 'NOT EXISTS',
+        ],
+    ],
+]);
+
+// ✅ Manually sort by priority
+usort($tasks, function ($a, $b) {
+    $priority_map = ['urgent' => 4, 'high' => 3, 'medium' => 2, 'low' => 1];
+    
+    $a_priority = get_post_meta($a->ID, '_task_priority', true);
+    $b_priority = get_post_meta($b->ID, '_task_priority', true);
+
+    return ($priority_map[$b_priority] ?? 0) <=> ($priority_map[$a_priority] ?? 0);
+});
+
+// ✅ Optional: limit to top 6 after sorting | set to show all
+// $tasks = array_slice($tasks, 0, 6);
 
         if ($tasks) {
             foreach ($tasks as $task) {
@@ -30,7 +43,9 @@
                 $priority    = get_post_meta($task_id, '_task_priority', true);
                 $status      = get_post_meta($task_id, '_task_status', true);
                 ?>
-                <div class="task-card">
+                <?php $priority_class = 'priority-' . strtolower($priority); ?>
+                <div class="task-card <?php echo esc_attr($priority_class); ?>">
+
                     <h3 class="task-title">
                         <a href="<?php echo get_edit_post_link($task_id); ?>">
                             <?php echo esc_html($task->post_title); ?>
