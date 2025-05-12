@@ -32,7 +32,11 @@
                 $priority    = get_post_meta($project_id, '_project_priority', true);
                 $links       = get_post_meta($project_id, '_my_project_links', true);
             ?>
-                <?php $priority = $priority ?: 'medium'; // fallback if not set $priority_class = 'priority-' . strtolower($priority); ?> 
+                <?php 
+                $priority = $priority ?: 'medium'; // fallback if not set
+                $priority_class = 'priority-' . strtolower($priority); 
+                ?>
+ 
                 <div class="project-card <?php echo esc_attr($priority_class); ?>">
                     <h3 class="project-title">
                         <a href="<?php echo get_edit_post_link($project_id); ?>">
