@@ -26,16 +26,33 @@ $meetings = get_posts([
 
 ?>
     <div class="nfinite-calendar-wrapper">
-    <h2 class="nfinite-calendar-title">📅 Upcoming Meetings Calendar</h2>
+    <?php
+$embed = get_option('nfinite_dash_calendar_embed_url', '');
+$tz    = get_option('nfinite_dash_calendar_tz', 'America/New_York');
+
+if ($embed && strpos($embed, 'ctz=') === false) {
+    $sep   = (strpos($embed, '?') === false) ? '?' : '&';
+    $embed = $embed . $sep . 'ctz=' . rawurlencode($tz);
+}
+?>
+
+<h2 class="nfinite-calendar-title">📅 <?php esc_html_e('Upcoming Meetings Calendar', 'nfinite-dash'); ?></h2>
+
+<?php if (empty($embed)) : ?>
+    <div class="notice notice-warning" style="margin:0 0 16px 0;">
+        <p><?php esc_html_e('No Google Calendar is configured. Add one in Nfinite Dashboard → Settings.', 'nfinite-dash'); ?></p>
+    </div>
+<?php else : ?>
     <iframe 
-    class="nfinite-calendar"
-    src="https://calendar.google.com/calendar/embed?src=bc%40qckbot.com&ctz=America%2FNew_York"
-    style="border: 0;" 
-    width="100%" 
-    height="600" 
-    frameborder="0" 
-    scrolling="no">
-</iframe>
+        class="nfinite-calendar"
+        src="<?php echo esc_url($embed); ?>"
+        style="border:0;"
+        width="100%"
+        height="600"
+        frameborder="0"
+        scrolling="no"></iframe>
+<?php endif; ?>
+
 </div>
     <div class="dashboard-meetings-grid">
       <?php 

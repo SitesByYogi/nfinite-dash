@@ -54,6 +54,7 @@ require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-my-notes-cpt
 require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-my-projects-cpt.php'; // Notes CPT
 require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-meetings-cpt.php'; // Notes CPT
 require_once plugin_dir_path(__FILE__) . 'includes/admin-menu.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-nfinite-dash-settings.php';
 require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-client-relationships.php';
 
 

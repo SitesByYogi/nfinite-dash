@@ -61,6 +61,17 @@ function nfinite_dashboard_admin_menu() {
         'manage_options',
         'edit.php?post_type=meetings'
     );
+
+    // Settings (for calendar embed + more later)
+add_submenu_page(
+    'nfinite-dash',
+    __('Settings', 'nfinite-dash'),
+    __('Settings', 'nfinite-dash'),
+    'manage_options',
+    'nfinite-dash-settings',
+    'nfinite_dash_render_settings_page'
+);
+
 }
 add_action('admin_menu', 'nfinite_dashboard_admin_menu');
 

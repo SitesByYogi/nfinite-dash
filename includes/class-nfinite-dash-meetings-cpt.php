@@ -85,27 +85,46 @@ class Nfinite_Dash_Meetings_CPT {
     }
 
     /**
- * ✅ Display Google Calendar on Meetings Admin Page
+ * ✅ Display Google Calendar on Meetings Admin Page (Settings-driven)
  */
 public function display_google_calendar_in_admin() {
     global $pagenow, $post_type;
-    
-    // Only show on Meetings CPT Admin Page
+
+    // Only on the Meetings CPT list screen
     if ($pagenow === 'edit.php' && $post_type === 'meetings') {
-        ?>
-        <div class="nfinite-calendar-wrapper">
-            <h2 class="nfinite-calendar-title">📅 Upcoming Meetings Calendar</h2>
-            <iframe 
-                class="nfinite-calendar"
-                src="https://calendar.google.com/calendar/embed?src=bc%40qckbot.com&ctz=America%2FNew_York"
-                style="border: 0;" 
-                width="100%" 
-                height="600" 
-                frameborder="0" 
-                scrolling="no">
-            </iframe>
-        </div>
-        <?php
+
+        // Pull from settings (set in class-nfinite-dash-settings.php)
+        $embed = get_option('nfinite_dash_calendar_embed_url', '');
+        $tz    = get_option('nfinite_dash_calendar_tz', get_option('timezone_string') ?: 'America/New_York');
+        $embed = trim((string) $embed);
+
+        // If a URL is set, append timezone if missing
+        if ($embed && strpos($embed, 'ctz=') === false) {
+            $sep   = (strpos($embed, '?') === false) ? '?' : '&';
+            $embed = $embed . $sep . 'ctz=' . rawurlencode($tz);
+        }
+
+        echo '<div class="nfinite-calendar-wrapper">';
+        echo '<h2 class="nfinite-calendar-title">📅 ' . esc_html__('Upcoming Meetings Calendar', 'nfinite-dash') . '</h2>';
+
+        if (empty($embed)) {
+            $settings_url = esc_url( admin_url('admin.php?page=nfinite-dash-settings') );
+            echo '<div class="notice notice-warning" style="margin:0 0 16px 0;"><p>';
+            printf(
+                /* translators: %s is a link to the settings screen */
+                esc_html__('No Google Calendar is configured. Set one in %s.', 'nfinite-dash'),
+                '<a href="' . $settings_url . '">' . esc_html__('Nfinite Dashboard → Settings', 'nfinite-dash') . '</a>'
+            );
+            echo '</p></div>';
+        } else {
+            printf(
+                '<iframe class="nfinite-calendar" src="%s" style="border:0;" width="100%%" height="%d" frameborder="0" scrolling="no"></iframe>',
+                esc_url($embed),
+                (int) apply_filters('nfinite_dash_meetings_iframe_height', 600) // filter for easy height tweaks
+            );
+        }
+
+        echo '</div>';
     }
 }
 
