@@ -9,34 +9,7 @@
  * ✅ Display Quick Links and Date/Time on My Projects Dashboard
  */
 function display_projects_dashboard_header() {
-    global $pagenow, $post_type;
-
-    // Ensure this only appears on the My Projects CPT admin page
-    if ($pagenow === 'edit.php' && $post_type === 'my_projects') {
-        date_default_timezone_set('America/New_York');
-        $current_date_time = date('F j, Y - g:i A T');
-
-        ?>
-        <div class="wrap">
-            <h1><?php echo __("Nfinite Projects Dashboard", 'nfinite-dash'); ?></h1>
-
-            <!-- ✅ Quick Links -->
-            <div class="dashboard-quick-links">
-                <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="quick-link"><?php _e('Meetings', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=client'); ?>" class="quick-link"><?php _e('Clients', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('profile.php'); ?>" class="quick-link"><?php _e('My Profile', 'nfinite-dash'); ?></a>
-            </div>
-
-            <!-- ✅ Date & Time -->
-            <div class="dashboard-date-time">
-                <p class="dashboard-date-time-text"><?php echo esc_html($current_date_time); ?></p>
-            </div>
-        </div>
-        <?php
-    }
+    nfinite_dash_render_content_header(__('Nfinite Projects', 'nfinite-dash'), 'my_projects', __('Your high-level workspace for client work, delivery, and task progress.', 'nfinite-dash'));
 }
 add_action('all_admin_notices', 'display_projects_dashboard_header');
 
@@ -57,7 +30,6 @@ class Nfinite_Dash_My_Projects_CPT {
         add_action('pre_get_posts', array($this, 'modify_project_orderby'));
 
         // ✅ AJAX Handling for Inline Editing
-        add_action('wp_ajax_update_project_meta', 'update_project_meta');
         add_action('wp_ajax_my_projects_update_meta', array($this, 'update_meta_via_ajax'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_inline_edit_scripts'));
     }
@@ -357,6 +329,15 @@ public function update_meta_via_ajax() {
     $post_id = intval($_POST['post_id']);
     $meta_key = '_' . ltrim(sanitize_text_field($_POST['meta_key']), '_'); // Ensure meta key starts with `_`
     $meta_value = sanitize_text_field($_POST['meta_value']);
+
+    $allowed_meta_keys = ['_project_status', '_project_priority'];
+    if (!in_array($meta_key, $allowed_meta_keys, true)) {
+        wp_send_json_error(['message' => 'Invalid project field.'], 400);
+    }
+
+    if (get_post_type($post_id) !== 'my_projects') {
+        wp_send_json_error(['message' => 'Invalid project.'], 400);
+    }
 
     if (!current_user_can('edit_post', $post_id)) {
         wp_send_json_error(['message' => 'Permission denied.', 'post_id' => $post_id]);

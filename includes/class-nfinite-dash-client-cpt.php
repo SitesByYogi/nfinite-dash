@@ -10,34 +10,7 @@
  * ✅ Display Quick Links and Date/Time on Clients Dashboard
  */
 function display_client_dashboard_header() {
-    global $pagenow, $post_type;
-
-    // Ensure this only appears on the Clients CPT admin page
-    if ($pagenow === 'edit.php' && $post_type === 'client') {
-        date_default_timezone_set('America/New_York');
-        $current_date_time = date('F j, Y - g:i A T');
-
-        ?>
-        <div class="wrap">
-            <h1><?php echo __("Nfinite Clients Dashboard", 'nfinite-dash'); ?></h1>
-
-            <!-- ✅ Quick Links -->
-            <div class="dashboard-quick-links">
-                <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="quick-link"><?php _e('Meetings', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=client'); ?>" class="quick-link"><?php _e('Clients', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('profile.php'); ?>" class="quick-link"><?php _e('My Profile', 'nfinite-dash'); ?></a>
-            </div>
-
-            <!-- ✅ Date & Time -->
-            <div class="dashboard-date-time">
-                <p class="dashboard-date-time-text"><?php echo esc_html($current_date_time); ?></p>
-            </div>
-        </div>
-        <?php
-    }
+    nfinite_dash_render_content_header(__('Nfinite Clients', 'nfinite-dash'), 'client', __('Keep client access, projects, tasks, and activity connected.', 'nfinite-dash'));
 }
 add_action('all_admin_notices', 'display_client_dashboard_header');
 
@@ -229,6 +202,9 @@ public function save_client_notes_meta_box_data($post_id) {
     public function assigned_items_meta_box($post) {
         echo '<h3>' . __('Assigned Tasks', 'nfinite-dash') . '</h3>';
         $this->display_assigned_posts('task_manager_task', $post->ID);
+
+        echo '<h3>' . __('Assigned Projects', 'nfinite-dash') . '</h3>';
+        $this->display_assigned_posts('my_projects', $post->ID);
 
         echo '<h3>' . __('Assigned Meetings', 'nfinite-dash') . '</h3>';
         $this->display_assigned_posts('meetings', $post->ID);

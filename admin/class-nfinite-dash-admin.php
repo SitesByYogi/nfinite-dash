@@ -50,12 +50,7 @@ class Nfinite_Dash_Admin {
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
 
-		// ✅ Hook into WordPress Admin Menu
-		add_action('admin_menu', array($this, 'add_admin_menu'));
-
-		// ✅ Enqueue Admin Styles & Scripts
-		add_action('admin_enqueue_scripts', array($this, 'enqueue_styles'));
-		add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
+		// Hooks are registered by the core loader to prevent duplicate callbacks.
 	}
 
 	/**

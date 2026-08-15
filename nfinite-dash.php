@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Nfinite Dashboard
  * Plugin URI:        https://sitesbyyogi.com/dashboard-plugin
- * Description:       Nfinite Dashboard is a custom WordPress admin dashboard designed to streamline workflow, enhance productivity, and provide quick access to essential tools. Built specifically for WordPress professionals, it replaces the default dashboard with a fully customizable interface that keeps everything organized and accessible in one place.
- * Version:           2.1.0
+ * Description:       A customizable WordPress workflow dashboard for tasks, clients, projects, meetings, notes, and quick-access tools.
+ * Version:           2.3.0
  * Author:            SitesByYogi
  * Author URI:        https://sitesbyyogi.com/
  * License:           GPL-2.0+
@@ -12,25 +12,14 @@
  * Domain Path:       /languages
  */
 
-// Exit if accessed directly
 if (!defined('WPINC')) {
     die;
 }
 
-/**
- * Plugin Version
- */
-define('NFINITE_DASH_VERSION', '2.1.0');
-
-/**
- * Define Plugin Path and URL
- */
+define('NFINITE_DASH_VERSION', '2.3.0');
 define('NFINITE_DASH_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('NFINITE_DASH_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-/**
- * Activation & Deactivation Hooks
- */
 function activate_nfinite_dash() {
     require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-activator.php';
     Nfinite_Dash_Activator::activate();
@@ -45,195 +34,165 @@ register_activation_hook(__FILE__, 'activate_nfinite_dash');
 register_deactivation_hook(__FILE__, 'deactivate_nfinite_dash');
 
 /**
- * Include Core Plugin Files
+ * Render the shared header used by Nfinite content workspaces.
+ *
+ * @param string $title     Workspace title.
+ * @param string $post_type Current post type.
+ * @param string $subtitle  Short workspace description.
  */
-require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash.php';
-require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-task-cpt.php'; // Task CPT
-require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-client-cpt.php'; // Clients CPT
-require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-my-notes-cpt.php'; // Notes CPT
-require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-my-projects-cpt.php'; // Notes CPT
-require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-meetings-cpt.php'; // Notes CPT
-require_once plugin_dir_path(__FILE__) . 'includes/admin-menu.php';
-require_once plugin_dir_path(__FILE__) . 'includes/class-nfinite-dash-settings.php';
-require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-client-relationships.php';
+function nfinite_dash_render_content_header($title, $post_type, $subtitle = '') {
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || $screen->base !== 'edit' || $screen->post_type !== $post_type) {
+        return;
+    }
 
+    $nav = [
+        'my_projects'       => ['label' => __('Projects', 'nfinite-dash'), 'icon' => 'portfolio'],
+        'task_manager_task' => ['label' => __('Tasks', 'nfinite-dash'), 'icon' => 'yes-alt'],
+        'client'            => ['label' => __('Clients', 'nfinite-dash'), 'icon' => 'groups'],
+        'meetings'          => ['label' => __('Meetings', 'nfinite-dash'), 'icon' => 'calendar-alt'],
+        'my_notes'          => ['label' => __('Notes', 'nfinite-dash'), 'icon' => 'edit-page'],
+    ];
+
+    $counts = wp_count_posts($post_type);
+    $published = isset($counts->publish) ? (int) $counts->publish : 0;
+    $total = 0;
+    foreach (['publish', 'draft', 'pending', 'private'] as $status) {
+        $total += isset($counts->{$status}) ? (int) $counts->{$status} : 0;
+    }
+    ?>
+    <div class="nfinite-content-shell">
+        <div class="nfinite-content-hero">
+            <div class="nfinite-content-hero__main">
+                <span class="nfinite-content-eyebrow"><?php esc_html_e('NFINITE WORKSPACE', 'nfinite-dash'); ?></span>
+                <h1><?php echo esc_html($title); ?></h1>
+                <?php if ($subtitle) : ?><p><?php echo esc_html($subtitle); ?></p><?php endif; ?>
+            </div>
+            <div class="nfinite-content-hero__meta">
+                <div class="nfinite-content-count"><strong><?php echo esc_html(number_format_i18n($total)); ?></strong><span><?php esc_html_e('Total', 'nfinite-dash'); ?></span></div>
+                <div class="nfinite-content-count"><strong><?php echo esc_html(number_format_i18n($published)); ?></strong><span><?php esc_html_e('Published', 'nfinite-dash'); ?></span></div>
+                <div class="nfinite-content-clock"><span class="dashicons dashicons-clock"></span><?php echo esc_html(wp_date('M j, Y · g:i A')); ?></div>
+            </div>
+        </div>
+        <nav class="nfinite-content-nav" aria-label="<?php esc_attr_e('Nfinite workspaces', 'nfinite-dash'); ?>">
+            <a class="nfinite-content-nav__overview" href="<?php echo esc_url(admin_url('admin.php?page=nfinite-dash')); ?>"><span class="dashicons dashicons-dashboard"></span><?php esc_html_e('Overview', 'nfinite-dash'); ?></a>
+            <?php foreach ($nav as $type => $item) : ?>
+                <a class="<?php echo $type === $post_type ? 'is-active' : ''; ?>" href="<?php echo esc_url(admin_url('edit.php?post_type=' . $type)); ?>">
+                    <span class="dashicons dashicons-<?php echo esc_attr($item['icon']); ?>"></span><?php echo esc_html($item['label']); ?>
+                </a>
+            <?php endforeach; ?>
+            <a href="<?php echo esc_url(admin_url('profile.php')); ?>"><span class="dashicons dashicons-admin-users"></span><?php esc_html_e('Profile', 'nfinite-dash'); ?></a>
+        </nav>
+    </div>
+    <?php
+}
+
+// Core and content types. Each CPT class self-registers its WordPress hooks.
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-task-cpt.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-client-cpt.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-my-notes-cpt.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-my-projects-cpt.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-meetings-cpt.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-settings.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/admin-menu.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-client-relationships.php';
+require_once NFINITE_DASH_PLUGIN_DIR . 'includes/class-nfinite-dash-frontend-tools.php';
+
+// Frontend shortcodes and project intake.
+new Nfinite_Dash_Frontend_Tools();
 
 /**
- * Start the Plugin
+ * Start the plugin once. Admin assets are registered by the core loader;
+ * the admin menu is owned by includes/admin-menu.php.
  */
 function run_nfinite_dash() {
     $plugin = new Nfinite_Dash();
     $plugin->run();
-
-    // ✅ Initialize Admin Functionality
-    if (is_admin()) {
-        require_once NFINITE_DASH_PLUGIN_DIR . 'admin/class-nfinite-dash-admin.php';
-        new Nfinite_Dash_Admin('nfinite-dash', NFINITE_DASH_VERSION);
-    }
 }
 add_action('plugins_loaded', 'run_nfinite_dash');
 
-
 /**
- * Initialize the Admin Functionality
+ * Search clients from the dashboard client picker.
  */
-if ( is_admin() ) {
-    require_once NFINITE_DASH_PLUGIN_DIR . 'admin/class-nfinite-dash-admin.php';
-
-    $plugin_admin = new Nfinite_Dash_Admin( 'nfinite-dash', NFINITE_DASH_VERSION );
-
-    // Hook to Add Admin Menu
-    add_action( 'admin_menu', array( $plugin_admin, 'add_admin_menu' ) );
-
-    // Enqueue Styles & Scripts for Admin
-    add_action( 'admin_enqueue_scripts', array( $plugin_admin, 'enqueue_styles' ) );
-    add_action( 'admin_enqueue_scripts', array( $plugin_admin, 'enqueue_scripts' ) );
-}
-
-// ✅ Handle AJAX Requests for Inline Editing
-function update_task_meta_ajax() {
-    check_ajax_referer('update_task_meta_nonce', '_ajax_nonce');
-
-    $task_id    = intval($_POST['task_id']);
-    $meta_key   = sanitize_text_field($_POST['meta_key']);
-    $meta_value = sanitize_text_field($_POST['meta_value']);
-
-    if (!current_user_can('edit_post', $task_id)) {
-        wp_send_json_error(['message' => 'Permission denied']);
-    }
-
-    if (update_post_meta($task_id, $meta_key, $meta_value)) {
-        wp_send_json_success(['message' => 'Updated successfully']);
-    } else {
-        wp_send_json_error(['message' => 'Update failed']);
-    }
-}
-add_action('wp_ajax_update_task_meta', 'update_task_meta_ajax');
-
-// ✅ Handle AJAX Requests for Updating Meeting Status
-function update_meeting_status_ajax() {
-    check_ajax_referer('update_meeting_status_nonce', '_ajax_nonce');
-
-    $meeting_id    = intval($_POST['meeting_id']);
-    $meeting_status = sanitize_text_field($_POST['meeting_status']);
-
-    if (!current_user_can('edit_post', $meeting_id)) {
-        wp_send_json_error(['message' => 'Permission denied']);
-    }
-
-    if (update_post_meta($meeting_id, '_meeting_status', $meeting_status)) {
-        wp_send_json_success(['message' => 'Updated successfully']);
-    } else {
-        wp_send_json_error(['message' => 'Update failed']);
-    }
-}
-add_action('wp_ajax_update_meeting_status', 'update_meeting_status_ajax');
-
-// ✅ Handle AJAX Requests for Updating Project Meta Data
-function update_project_meta_ajax() {
-    check_ajax_referer('update_project_meta_nonce', '_ajax_nonce');
-
-    $project_id  = intval($_POST['project_id']);
-    $meta_key    = sanitize_text_field($_POST['meta_key']);
-    $meta_value  = sanitize_text_field($_POST['meta_value']);
-
-    if (!current_user_can('edit_post', $project_id)) {
-        wp_send_json_error(['message' => 'Permission denied']);
-    }
-
-    if (update_post_meta($project_id, $meta_key, $meta_value)) {
-        wp_send_json_success(['message' => 'Updated successfully']);
-    } else {
-        wp_send_json_error(['message' => 'Update failed']);
-    }
-}
-add_action('wp_ajax_update_project_meta', 'update_project_meta_ajax');
-
-// ✅ Search Clients by Name
-add_action('wp_ajax_search_clients_dashboard', function () {
+function nfinite_dash_ajax_search_clients_dashboard() {
     check_ajax_referer('client_search_nonce', 'nonce');
-    $query = sanitize_text_field($_POST['query']);
 
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error(['message' => __('Permission denied.', 'nfinite-dash')], 403);
+    }
+
+    $query = isset($_POST['query']) ? sanitize_text_field(wp_unslash($_POST['query'])) : '';
     $clients = get_posts([
         'post_type'      => 'client',
-        'posts_per_page' => -1,
-        's'              => $query
+        'post_status'    => ['publish', 'draft', 'private', 'pending'],
+        'posts_per_page' => 25,
+        's'              => $query,
+        'orderby'        => 'title',
+        'order'          => 'ASC',
     ]);
 
-    if ($clients) {
-        $results = array_map(function ($client) {
-            return ['id' => $client->ID, 'title' => $client->post_title];
-        }, $clients);
-        wp_send_json_success($results);
-    } else {
-        wp_send_json_error(['message' => __('No clients found.', 'nfinite-dash')]);
-    }
-});
+    $results = array_map(function ($client) {
+        return ['id' => $client->ID, 'title' => $client->post_title];
+    }, $clients);
 
-// ✅ Load Client Dashboard with Assigned Tasks, Meetings, and Notes
-add_action('wp_ajax_load_client_dashboard', function () {
+    wp_send_json_success($results);
+}
+add_action('wp_ajax_search_clients_dashboard', 'nfinite_dash_ajax_search_clients_dashboard');
+
+/**
+ * Load a compact client relationship dashboard.
+ */
+function nfinite_dash_ajax_load_client_dashboard() {
     check_ajax_referer('client_dashboard_nonce', 'nonce');
-    $client_id = intval($_POST['client_id']);
 
-    if (!$client_id) {
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error(['message' => __('Permission denied.', 'nfinite-dash')], 403);
+    }
+
+    $client_id = isset($_POST['client_id']) ? absint($_POST['client_id']) : 0;
+    if (!$client_id || get_post_type($client_id) !== 'client') {
         wp_send_json_error(['message' => __('Invalid client ID.', 'nfinite-dash')]);
     }
+
+    $sections = [
+        'task_manager_task' => __('Assigned Tasks', 'nfinite-dash'),
+        'my_projects'       => __('Projects', 'nfinite-dash'),
+        'meetings'          => __('Scheduled Meetings', 'nfinite-dash'),
+        'my_notes'          => __('Client Notes', 'nfinite-dash'),
+    ];
 
     ob_start();
     ?>
     <div class="client-dashboard-section">
         <h2><?php echo esc_html(get_the_title($client_id)); ?></h2>
-        <p>
-            <a href="<?php echo get_edit_post_link($client_id); ?>" class="button"><?php _e('Edit Client', 'nfinite-dash'); ?></a>
-            <a href="<?php echo get_permalink($client_id); ?>" class="button"><?php _e('View Client', 'nfinite-dash'); ?></a>
-        </p>
-
-        <!-- ✅ Assigned Tasks -->
-        <h3><?php _e('Assigned Tasks', 'nfinite-dash'); ?></h3>
-        <ul>
+        <p><a href="<?php echo esc_url(get_edit_post_link($client_id)); ?>" class="button"><?php esc_html_e('Edit Client', 'nfinite-dash'); ?></a></p>
+        <?php foreach ($sections as $post_type => $heading) : ?>
+            <h3><?php echo esc_html($heading); ?></h3>
             <?php
-            $tasks = get_posts(['post_type' => 'task_manager_task', 'meta_key' => '_assigned_client', 'meta_value' => $client_id]);
-            if ($tasks) {
-                foreach ($tasks as $task) {
-                    echo '<li><a href="' . get_edit_post_link($task->ID) . '">' . esc_html($task->post_title) . '</a></li>';
-                }
-            } else {
-                echo '<p>No assigned tasks.</p>';
-            }
+            $items = get_posts([
+                'post_type'      => $post_type,
+                'post_status'    => ['publish', 'draft', 'private', 'pending'],
+                'posts_per_page' => -1,
+                'meta_key'       => '_assigned_client',
+                'meta_value'     => $client_id,
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+            ]);
             ?>
-        </ul>
-
-        <!-- ✅ Assigned Meetings -->
-        <h3><?php _e('Scheduled Meetings', 'nfinite-dash'); ?></h3>
-        <ul>
-            <?php
-            $meetings = get_posts(['post_type' => 'meetings', 'meta_key' => '_assigned_client', 'meta_value' => $client_id]);
-            if ($meetings) {
-                foreach ($meetings as $meeting) {
-                    echo '<li><a href="' . get_edit_post_link($meeting->ID) . '">' . esc_html($meeting->post_title) . '</a></li>';
-                }
-            } else {
-                echo '<p>No scheduled meetings.</p>';
-            }
-            ?>
-        </ul>
-
-        <!-- ✅ Assigned Notes -->
-        <h3><?php _e('Client Notes', 'nfinite-dash'); ?></h3>
-        <ul>
-            <?php
-            $notes = get_posts(['post_type' => 'my_notes', 'meta_key' => '_assigned_client', 'meta_value' => $client_id]);
-            if ($notes) {
-                foreach ($notes as $note) {
-                    echo '<li><a href="' . get_edit_post_link($note->ID) . '">' . esc_html($note->post_title) . '</a></li>';
-                }
-            } else {
-                echo '<p>No notes found.</p>';
-            }
-            ?>
-        </ul>
+            <?php if ($items) : ?>
+                <ul>
+                    <?php foreach ($items as $item) : ?>
+                        <li><a href="<?php echo esc_url(get_edit_post_link($item->ID)); ?>"><?php echo esc_html($item->post_title); ?></a></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else : ?>
+                <p><?php esc_html_e('No assigned items.', 'nfinite-dash'); ?></p>
+            <?php endif; ?>
+        <?php endforeach; ?>
     </div>
     <?php
-    wp_send_json_success(ob_get_clean());
-});
 
+    wp_send_json_success(ob_get_clean());
+}
+add_action('wp_ajax_load_client_dashboard', 'nfinite_dash_ajax_load_client_dashboard');
