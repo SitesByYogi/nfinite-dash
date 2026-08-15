@@ -10,14 +10,22 @@
 // Fetch Active Projects (Exclude Completed Projects)
 $projects = get_posts([
     'post_type'      => 'my_projects',
+    'post_status'    => ['publish', 'draft', 'private', 'pending'],
     'posts_per_page' => 6,
     'orderby'        => 'date',
     'order'          => 'DESC',
+    // Keep this in sync with the dashboard summary and standalone card view.
+    // Projects created before status tracking existed should still be visible.
     'meta_query'     => [
+        'relation' => 'OR',
         [
             'key'     => '_project_status',
             'value'   => 'completed',
             'compare' => '!=',
+        ],
+        [
+            'key'     => '_project_status',
+            'compare' => 'NOT EXISTS',
         ],
     ],
 ]);
@@ -34,6 +42,32 @@ $projects = get_posts([
             $priority_class = 'priority-' . strtolower($priority);
 
             $links       = get_post_meta($project_id, '_my_project_links', true);
+
+            // Tasks belong to one primary project. Include 2.2.0 legacy assignments during upgrade.
+            $project_task_ids = [];
+            $all_task_ids = get_posts([
+                'post_type'      => 'task_manager_task',
+                'post_status'    => ['publish', 'draft', 'private', 'pending'],
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+            ]);
+            foreach ($all_task_ids as $candidate_task_id) {
+                $task_project_id = absint(get_post_meta($candidate_task_id, '_nfinite_project', true));
+                if (!$task_project_id) {
+                    $legacy_projects = get_post_meta($candidate_task_id, '_nfinite_related_projects', true);
+                    $legacy_projects = is_array($legacy_projects) ? array_map('absint', $legacy_projects) : ($legacy_projects ? [absint($legacy_projects)] : []);
+                    $task_project_id = !empty($legacy_projects) ? reset($legacy_projects) : 0;
+                }
+                if ($task_project_id === $project_id) {
+                    $project_task_ids[] = absint($candidate_task_id);
+                }
+            }
+            $new_task_url = add_query_arg([
+                'post_type' => 'task_manager_task',
+                'nfinite_project' => $project_id,
+            ], admin_url('post-new.php'));
         ?>
 
             <?php $priority_class = 'priority-' . strtolower($priority); ?> 
@@ -72,6 +106,33 @@ $projects = get_posts([
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
+
+                <div class="nfinite-project-card-tasks">
+                    <div class="nfinite-project-card-tasks-heading">
+                        <strong><?php _e('Tasks', 'nfinite-dash'); ?></strong>
+                        <span><?php echo esc_html(count($project_task_ids)); ?></span>
+                    </div>
+                    <?php if ($project_task_ids): ?>
+                        <ul>
+                            <?php foreach (array_slice($project_task_ids, 0, 5) as $task_id):
+                                $task_status = get_post_meta($task_id, '_task_status', true);
+                            ?>
+                                <li>
+                                    <a href="<?php echo esc_url(get_edit_post_link($task_id)); ?>"><?php echo esc_html(get_the_title($task_id)); ?></a>
+                                    <?php if ($task_status): ?>
+                                        <small><?php echo esc_html(ucwords(str_replace(['_', '-'], ' ', $task_status))); ?></small>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php if (count($project_task_ids) > 5): ?>
+                            <p class="nfinite-project-card-more"><?php echo esc_html(sprintf(__('+ %d more', 'nfinite-dash'), count($project_task_ids) - 5)); ?></p>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <p class="nfinite-project-card-empty"><?php _e('No tasks yet.', 'nfinite-dash'); ?></p>
+                    <?php endif; ?>
+                    <a href="<?php echo esc_url($new_task_url); ?>" class="button button-small"><?php _e('Add Task', 'nfinite-dash'); ?></a>
+                </div>
 
                 <div class="project-actions">
                     <a href="<?php echo get_edit_post_link($project_id); ?>" class="button button-secondary">

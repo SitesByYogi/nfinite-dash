@@ -28,11 +28,8 @@ $meetings = get_posts([
     <div class="nfinite-calendar-wrapper">
     <?php
 $embed = get_option('nfinite_dash_calendar_embed_url', '');
-$tz    = get_option('nfinite_dash_calendar_tz', 'America/New_York');
-
-if ($embed && strpos($embed, 'ctz=') === false) {
-    $sep   = (strpos($embed, '?') === false) ? '?' : '&';
-    $embed = $embed . $sep . 'ctz=' . rawurlencode($tz);
+if ($embed && function_exists('nfinite_dash_calendar_url_with_timezone')) {
+    $embed = nfinite_dash_calendar_url_with_timezone($embed);
 }
 ?>
 

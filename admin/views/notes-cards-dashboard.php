@@ -1,4 +1,4 @@
-<div class="wrap">
+<div class="wrap nfinite-dashboard nfinite-card-view">
     <h1><?php _e('Notes – Card View', 'nfinite-dash'); ?></h1>
 
     <!-- 🔘 Top Action Buttons -->

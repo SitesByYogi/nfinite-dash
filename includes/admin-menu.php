@@ -1,165 +1,132 @@
 <?php
+/**
+ * Nfinite Dashboard admin menu and toolbar.
+ *
+ * @package Nfinite_Dash
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 function nfinite_dashboard_admin_menu() {
-    // ✅ Main Dashboard Menu (Top Level)
     add_menu_page(
-        __('Nfinite Dashboard', 'nfinite-dash'), // Page title
-        __('Nfinite Dashboard', 'nfinite-dash'), // Menu title
+        __('Nfinite Dashboard', 'nfinite-dash'),
+        __('Nfinite Dashboard', 'nfinite-dash'),
         'manage_options',
-        'nfinite-dash', // Slug (must match parent slug in submenus)
-        '',
+        'nfinite-dash',
+        'nfinite_dashboard_render_page',
         'dashicons-analytics',
         2
     );
 
-    // ✅ Correctly Nesting Submenus Under "Nfinite Dashboard"
     add_submenu_page(
         'nfinite-dash',
         __('Dashboard Overview', 'nfinite-dash'),
         __('Dashboard Overview', 'nfinite-dash'),
         'manage_options',
         'nfinite-dash',
-        'nfinite_dashboard_render_page' // Main dashboard function
+        'nfinite_dashboard_render_page'
     );
+
+    add_submenu_page('nfinite-dash', __('Clients', 'nfinite-dash'), __('Clients', 'nfinite-dash'), 'manage_options', 'edit.php?post_type=client');
+    add_submenu_page('nfinite-dash', __('Tasks', 'nfinite-dash'), __('Tasks', 'nfinite-dash'), 'manage_options', 'edit.php?post_type=task_manager_task&page=nfinite-task-cards');
+    add_submenu_page('nfinite-dash', __('My Notes', 'nfinite-dash'), __('My Notes', 'nfinite-dash'), 'manage_options', 'edit.php?post_type=my_notes&page=notes-cards-view');
+    add_submenu_page('nfinite-dash', __('My Projects', 'nfinite-dash'), __('My Projects', 'nfinite-dash'), 'manage_options', 'edit.php?post_type=my_projects&page=my-projects-cards');
+    add_submenu_page('nfinite-dash', __('Meetings', 'nfinite-dash'), __('Meetings', 'nfinite-dash'), 'manage_options', 'edit.php?post_type=meetings');
 
     add_submenu_page(
         'nfinite-dash',
-        __('Clients', 'nfinite-dash'),
-        __('Clients', 'nfinite-dash'),
+        __('Settings', 'nfinite-dash'),
+        __('Settings', 'nfinite-dash'),
         'manage_options',
-        'edit.php?post_type=client'
+        'nfinite-dash-settings',
+        'nfinite_dash_render_settings_page'
     );
-
-    add_submenu_page(
-        'nfinite-dash',
-        __('Tasks', 'nfinite-dash'),
-        __('Tasks', 'nfinite-dash'),
-        'manage_options',
-        'edit.php?post_type=task_manager_task&page=nfinite-task-cards'
-    );
-
-    add_submenu_page(
-        'nfinite-dash',
-        __('My Notes', 'nfinite-dash'),
-        __('My Notes', 'nfinite-dash'),
-        'manage_options',
-        'edit.php?post_type=my_notes&page=notes-cards-view'
-    );
-
-    add_submenu_page(
-        'nfinite-dash',
-        __('My Projects', 'nfinite-dash'),
-        __('My Projects', 'nfinite-dash'),
-        'manage_options',
-        'edit.php?post_type=my_projects&page=my-projects-cards'
-    );
-
-    add_submenu_page(
-        'nfinite-dash',
-        __('Meetings', 'nfinite-dash'),
-        __('Meetings', 'nfinite-dash'),
-        'manage_options',
-        'edit.php?post_type=meetings'
-    );
-
-    // Settings (for calendar embed + more later)
-add_submenu_page(
-    'nfinite-dash',
-    __('Settings', 'nfinite-dash'),
-    __('Settings', 'nfinite-dash'),
-    'manage_options',
-    'nfinite-dash-settings',
-    'nfinite_dash_render_settings_page'
-);
-
 }
 add_action('admin_menu', 'nfinite_dashboard_admin_menu');
 
-/**
- * ✅ Render the Main Dashboard Page
- */
 function nfinite_dashboard_render_page() {
-    echo '<h1>Nfinite Dashboard Overview</h1>';
-    echo '<p>Welcome to your custom dashboard!</p>';
+    $display_file = NFINITE_DASH_PLUGIN_DIR . 'admin/partials/nfinite-dash-admin-display.php';
+
+    if (file_exists($display_file)) {
+        include $display_file;
+        return;
+    }
+
+    echo '<div class="wrap"><h1>' . esc_html__('Nfinite Dashboard', 'nfinite-dash') . '</h1></div>';
 }
 
-// Add Toolbar Menu Items to Admin Bar
-add_action('admin_bar_menu', 'nfinite_dashboard_toolbar_links', 999);
+/**
+ * Resolve a saved toolbar URL.
+ *
+ * Admin-relative paths are converted to admin URLs while absolute URLs are left intact.
+ *
+ * @param string $url Saved toolbar URL.
+ * @return string
+ */
+function nfinite_dash_resolve_toolbar_url($url) {
+    $url = trim((string) $url);
 
+    if ($url === '') {
+        return '';
+    }
+
+    if (preg_match('#^https?://#i', $url)) {
+        return esc_url($url);
+    }
+
+    return esc_url(admin_url(ltrim($url, '/')));
+}
+
+/**
+ * Dynamic Nfinite toolbar shortcuts.
+ *
+ * @param WP_Admin_Bar $wp_admin_bar Admin bar instance.
+ */
 function nfinite_dashboard_toolbar_links($wp_admin_bar) {
-    // ✅ Add Parent Menu (Nfinite Dashboard)
+    if (!is_admin_bar_showing() || !current_user_can('manage_options')) {
+        return;
+    }
+
+    if (!(int) get_option('nfinite_dash_toolbar_enabled', 1)) {
+        return;
+    }
+
     $wp_admin_bar->add_node([
         'id'    => 'nfinite-dashboard',
-        'title' => 'Nfinite Dashboard',
-        'href'  => admin_url('admin.php?page=nfinite-dash'), // Ensure this matches your primary dashboard link
+        'title' => esc_html__('Nfinite Dashboard', 'nfinite-dash'),
+        'href'  => admin_url('admin.php?page=nfinite-dash'),
     ]);
 
-    // ✅ Add Task Manager as a Submenu
-    $wp_admin_bar->add_node([
-        'id'     => 'task-manager',
-        'parent' => 'nfinite-dashboard',
-        'title'  => 'Tasks',
-        'href'   => admin_url('edit.php?post_type=task_manager_task&page=nfinite-task-cards'),
-    ]);
+    $links = get_option('nfinite_dash_toolbar_links', []);
+    if (!is_array($links) || empty($links)) {
+        $links = function_exists('nfinite_dash_default_toolbar_links') ? nfinite_dash_default_toolbar_links() : [];
+    }
 
-    // ✅ Add Clients as a Submenu
-    $wp_admin_bar->add_node([
-        'id'     => 'clients',
-        'parent' => 'nfinite-dashboard',
-        'title'  => 'Clients',
-        'href'   => admin_url('edit.php?post_type=client'),
-    ]);
+    foreach ($links as $index => $link) {
+        $label = isset($link['label']) ? sanitize_text_field($link['label']) : '';
+        $href  = isset($link['url']) ? nfinite_dash_resolve_toolbar_url($link['url']) : '';
 
-    // ✅ Add Meetings as a Submenu
-    $wp_admin_bar->add_node([
-        'id'     => 'meetings',
-        'parent' => 'nfinite-dashboard',
-        'title'  => 'Meetings',
-        'href'   => admin_url('edit.php?post_type=meetings'),
-    ]);
+        if ($label === '' || $href === '') {
+            continue;
+        }
 
-    // ✅ Add My Notes as a Submenu
-    $wp_admin_bar->add_node([
-        'id'     => 'my-notes',
-        'parent' => 'nfinite-dashboard',
-        'title'  => 'My Notes',
-        'href'   => admin_url('edit.php?post_type=my_notes&page=notes-cards-view'),
-    ]);
+        $node = [
+            'id'     => 'nfinite-toolbar-link-' . absint($index),
+            'parent' => 'nfinite-dashboard',
+            'title'  => esc_html($label),
+            'href'   => $href,
+        ];
 
-    // ✅ Add My Projects as a Submenu
-    $wp_admin_bar->add_node([
-        'id'     => 'my-projects',
-        'parent' => 'nfinite-dashboard',
-        'title'  => 'My Projects',
-        'href'   => admin_url('edit.php?post_type=my_projects&page=my-projects-cards'),
-    ]);
+        if (!empty($link['new_tab'])) {
+            $node['meta'] = [
+                'target' => '_blank',
+                'rel'    => 'noopener noreferrer',
+            ];
+        }
 
-    // ✅ Add External Links Under My Notes
-    $external_links = [
-        'my-creds' => [
-            'title'  => 'Credentials',
-            'href'   => 'https://docs.google.com/spreadsheets/d/14beEQJTCq6aal3pqgurEft4q5wk38pzsBAsSP6xsqUM/edit?gid=0#gid=0',
-        ],
-        'chat-gpt' => [
-            'title'  => 'ChatGPT',
-            'href'   => 'https://chatgpt.com/',
-        ],
-        'gmail' => [
-            'title'  => 'Gmail',
-            'href'   => 'https://gmail.com/',
-        ],
-    ];
-
-    foreach ($external_links as $id => $link) {
-        $wp_admin_bar->add_node([
-            'id'     => $id,
-            'parent' => 'my-notes', // Grouped under "My Notes"
-            'title'  => $link['title'],
-            'href'   => $link['href'],
-            'meta'   => [
-                'target' => '_blank', // Opens in a new tab
-            ],
-        ]);
+        $wp_admin_bar->add_node($node);
     }
 }
-
+add_action('admin_bar_menu', 'nfinite_dashboard_toolbar_links', 999);

@@ -4,7 +4,7 @@ Donate link: https://sitesbyyogi.com/
 Tags: admin, dashboard, workflow, productivity, task management, project management
 Requires at least: 5.6
 Tested up to: 6.4
-Stable tag: 2.1.0
+Stable tag: 2.2.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,6 +22,9 @@ Nfinite Dashboard is a WordPress admin dashboard plugin designed to streamline w
 - Customizable columns for better task and project visibility.
 - Built-in client search and filtering tools.
 - Performance-optimized admin scripts and styles.
+- Dynamic admin toolbar links managed from Nfinite Dashboard Settings.
+- Task relationships connecting clients, projects, meetings, and notes.
+- Reciprocal Related Tasks controls on connected content types.
 
 == Installation ==
 
@@ -56,6 +59,13 @@ A "View Completed Tasks" button is available in the **Tasks** section, allowing 
 
 == Changelog ==
 
+= 2.2.1 =
+* Added dynamic, reorderable admin toolbar links.
+* Added Task connections for clients, projects, meetings, and notes.
+* Added reciprocal Related Tasks controls.
+* Preserved existing client assignment metadata for backwards compatibility.
+* Consolidated duplicate admin bootstrap hooks and tightened AJAX metadata permissions.
+
 = 2.1.0 =
 * Fixed issues with infinite reload and AJAX calls.
 * Improved task status and priority dropdowns.
@@ -73,6 +83,9 @@ A "View Completed Tasks" button is available in the **Tasks** section, allowing 
 
 == Upgrade Notice ==
 
+= 2.2.1 =
+Adds configurable toolbar shortcuts and expanded workflow relationships while preserving existing client assignments.
+
 = 2.1.0 =
 This update fixes AJAX-related bugs and improves dropdown functionality. Recommended for all users.
 
@@ -86,3 +99,11 @@ For support and documentation, visit [SitesByYogi](https://sitesbyyogi.com/).
 ---
 
 This readme follows the WordPress plugin guidelines and provides structured documentation for the **Nfinite Dashboard** plugin.
+
+= 2.3.0 =
+* Added Frontend Tools module for Projects Hero, Projects Directory, and Project Submission.
+* Preserved existing shortcodes: [qck_projects_hero], [qck_projects_directory], [qck_project_submission_form].
+* Added Frontend Tools settings, page selectors, display limits, submission access, and submission defaults.
+* Centralized frontend styling and tab behavior into Nfinite public CSS/JS.
+* Project directory now shows Project -> Task completion progress when tasks are connected.
+* Preserved secure pending-review project intake, rate limiting, and administrator email notification.

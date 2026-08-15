@@ -9,34 +9,7 @@
  * ✅ Display Quick Links and Date/Time on Meetings Dashboard
  */
 function display_meetings_dashboard_header() {
-    global $pagenow, $post_type;
-
-    // Ensure this only appears on the Meetings CPT admin page
-    if ($pagenow === 'edit.php' && $post_type === 'meetings') {
-        date_default_timezone_set('America/New_York');
-        $current_date_time = date('F j, Y - g:i A T');
-
-        ?>
-        <div class="wrap">
-            <h1><?php echo __("Nfinite Meetings Dashboard", 'nfinite-dash'); ?></h1>
-
-            <!-- ✅ Quick Links -->
-            <div class="dashboard-quick-links">
-                <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="quick-link"><?php _e('Meetings', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=client'); ?>" class="quick-link"><?php _e('Clients', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('profile.php'); ?>" class="quick-link"><?php _e('My Profile', 'nfinite-dash'); ?></a>
-            </div>
-
-            <!-- ✅ Date & Time -->
-            <div class="dashboard-date-time">
-                <p class="dashboard-date-time-text"><?php echo esc_html($current_date_time); ?></p>
-            </div>
-        </div>
-        <?php
-    }
+    nfinite_dash_render_content_header(__('Nfinite Meetings', 'nfinite-dash'), 'meetings', __('Keep upcoming conversations tied to the work they support.', 'nfinite-dash'));
 }
 add_action('all_admin_notices', 'display_meetings_dashboard_header');
 
@@ -46,7 +19,7 @@ class Nfinite_Dash_Meetings_CPT {
     public function __construct() {
         add_action('init', array($this, 'register_post_type'));
         add_action('add_meta_boxes', array($this, 'add_meeting_meta_boxes'));
-        add_action('save_post', array($this, 'save_meeting_meta_box_data'));
+        add_action('save_post_meetings', array($this, 'save_meeting_meta_box_data'));
 
         // ✅ Admin Table Columns
         add_filter('manage_meetings_posts_columns', array($this, 'add_meeting_columns'));
@@ -94,14 +67,9 @@ public function display_google_calendar_in_admin() {
     if ($pagenow === 'edit.php' && $post_type === 'meetings') {
 
         // Pull from settings (set in class-nfinite-dash-settings.php)
-        $embed = get_option('nfinite_dash_calendar_embed_url', '');
-        $tz    = get_option('nfinite_dash_calendar_tz', get_option('timezone_string') ?: 'America/New_York');
-        $embed = trim((string) $embed);
-
-        // If a URL is set, append timezone if missing
-        if ($embed && strpos($embed, 'ctz=') === false) {
-            $sep   = (strpos($embed, '?') === false) ? '?' : '&';
-            $embed = $embed . $sep . 'ctz=' . rawurlencode($tz);
+        $embed = trim((string) get_option('nfinite_dash_calendar_embed_url', ''));
+        if ($embed && function_exists('nfinite_dash_calendar_url_with_timezone')) {
+            $embed = nfinite_dash_calendar_url_with_timezone($embed);
         }
 
         echo '<div class="nfinite-calendar-wrapper">';

@@ -10,7 +10,7 @@
 // Fetch Active Tasks (Exclude Completed Tasks)
 $tasks = get_posts([
     'post_type' => 'task_manager_task',
-    'posts_per_page' => -1,
+    'posts_per_page' => 6,
     'meta_query' => [
         'relation' => 'OR',
         [
@@ -44,6 +44,9 @@ usort($tasks, function ($a, $b) {
             $client_name = $client_id ? get_the_title($client_id) : __('Unassigned', 'nfinite-dash');
             $client_edit_link = $client_id ? get_edit_post_link($client_id) : '#';
             $due_date   = get_post_meta($task_id, '_task_due_date', true);
+            $project_id = absint(get_post_meta($task_id, '_nfinite_project', true));
+            $project_name = $project_id ? get_the_title($project_id) : __('No project', 'nfinite-dash');
+            $project_edit_link = $project_id ? get_edit_post_link($project_id) : '';
             $priority   = get_post_meta($task_id, '_task_priority', true);
             $status     = get_post_meta($task_id, '_task_status', true);
         ?>
@@ -55,8 +58,16 @@ usort($tasks, function ($a, $b) {
                     </a>
                 </h3>
 
-                <p><strong><?php _e('Assigned Client:', 'nfinite-dash'); ?></strong> 
-                    <a href="<?php echo esc_url($client_edit_link); ?>"><?php echo esc_html($client_name); ?></a>
+                <p><strong><?php _e('Project:', 'nfinite-dash'); ?></strong>
+                    <?php if ($project_id && $project_edit_link): ?>
+                        <a href="<?php echo esc_url($project_edit_link); ?>"><?php echo esc_html($project_name); ?></a>
+                    <?php else: ?>
+                        <?php echo esc_html($project_name); ?>
+                    <?php endif; ?>
+                </p>
+
+                <p><strong><?php _e('Client:', 'nfinite-dash'); ?></strong> 
+                    <?php if ($client_id): ?><a href="<?php echo esc_url($client_edit_link); ?>"><?php echo esc_html($client_name); ?></a><?php else: ?><?php echo esc_html($client_name); ?><?php endif; ?>
                 </p>
 
                 <p><strong><?php _e('Due Date:', 'nfinite-dash'); ?></strong> 

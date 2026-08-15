@@ -1,4 +1,4 @@
-<div class="wrap">
+<div class="wrap nfinite-dashboard nfinite-card-view">
     <h1><?php _e('Nfinite Task Cards', 'task-manager'); ?></h1>
 
     <div class="dashboard-tasks-grid">
@@ -115,9 +115,10 @@ $completed_tasks = get_posts([
 ]);
 ?>
 
-<h2 style="margin-top: 40px;"><?php _e('Completed Tasks', 'nfinite-dash'); ?></h2>
+<div class="nfinite-completed-tasks">
+<h2><?php _e('Completed Tasks', 'nfinite-dash'); ?></h2>
 
-<table class="widefat fixed striped">
+<table class="widefat fixed striped nfinite-completed-tasks-table">
     <thead>
         <tr>
             <th><?php _e('Task', 'nfinite-dash'); ?></th>
@@ -154,6 +155,7 @@ $completed_tasks = get_posts([
         ?>
     </tbody>
 </table>
+</div>
 </div>
 
 <script>

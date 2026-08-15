@@ -9,34 +9,7 @@
  * ✅ Display Quick Links and Date/Time on Tasks Dashboard
  */
 function display_task_dashboard_header() {
-    global $pagenow, $post_type;
-
-    // Ensure this only appears on the Tasks CPT admin page
-    if ($pagenow === 'edit.php' && $post_type === 'task_manager_task') {
-        date_default_timezone_set('America/New_York');
-        $current_date_time = date('F j, Y - g:i A T');
-
-        ?>
-        <div class="wrap">
-            <h1><?php echo __("Nfinite Tasks Dashboard", 'nfinite-dash'); ?></h1>
-
-            <!-- ✅ Quick Links -->
-            <div class="dashboard-quick-links">
-                <a href="<?php echo admin_url('edit.php?post_type=my_projects'); ?>" class="quick-link"><?php _e('My Projects', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=my_notes'); ?>" class="quick-link"><?php _e('My Notes', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=task_manager_task'); ?>" class="quick-link"><?php _e('Tasks', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=meetings'); ?>" class="quick-link"><?php _e('Meetings', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('edit.php?post_type=client'); ?>" class="quick-link"><?php _e('Clients', 'nfinite-dash'); ?></a>
-                <a href="<?php echo admin_url('profile.php'); ?>" class="quick-link"><?php _e('My Profile', 'nfinite-dash'); ?></a>
-            </div>
-
-            <!-- ✅ Date & Time -->
-            <div class="dashboard-date-time">
-                <p class="dashboard-date-time-text"><?php echo esc_html($current_date_time); ?></p>
-            </div>
-        </div>
-        <?php
-    }
+    nfinite_dash_render_content_header(__('Nfinite Tasks', 'nfinite-dash'), 'task_manager_task', __('Manage the work that moves your projects forward.', 'nfinite-dash'));
 }
 add_action('all_admin_notices', 'display_task_dashboard_header');
 
@@ -47,7 +20,6 @@ class Nfinite_Dash_Task_CPT {
         add_action('init', array($this, 'register_post_type'));
         add_action('init', array($this, 'register_taxonomies')); // ✅ Register Categories & Tags
         add_action('add_meta_boxes', array($this, 'add_task_meta_boxes'));
-        add_action('save_post', array($this, 'save_task_meta_box_data'));
         add_action('save_post_task_manager_task', array($this, 'save_task_meta_box_data'));
         add_action('admin_menu', array($this, 'register_custom_task_dashboard'));
 
@@ -64,7 +36,6 @@ class Nfinite_Dash_Task_CPT {
 
         // ✅ AJAX Handling for Inline Editing
         add_action('wp_ajax_task_manager_update_meta', array($this, 'task_manager_update_meta'));
-        add_action('wp_ajax_nopriv_task_manager_update_meta', array($this, 'task_manager_update_meta'));
 
         // ✅ Add Completed Tasks Button
         add_action('restrict_manage_posts', array($this, 'add_completed_tasks_button'));
@@ -365,18 +336,23 @@ public function filter_tasks($query) {
     }
 
     $post_id = intval($_POST['task_id']);
-    $meta_key = '_' . ltrim(sanitize_text_field($_POST['meta_key']), '_'); // ✅ Ensure meta key starts with `_`
+    $meta_key = '_' . ltrim(sanitize_text_field($_POST['meta_key']), '_'); // Ensure meta key starts with `_`
     $meta_value = sanitize_text_field($_POST['meta_value']);
 
-    // ✅ Debug Logging
-    error_log("🔄 Updating task meta - Task ID: {$post_id}, Meta Key: {$meta_key}, Meta Value: {$meta_value}");
+    $allowed_meta_keys = ['_task_status', '_task_priority', '_task_due_date'];
+    if (!in_array($meta_key, $allowed_meta_keys, true)) {
+        wp_send_json_error(['message' => 'Invalid task field.'], 400);
+    }
+
+    if (get_post_type($post_id) !== 'task_manager_task') {
+        wp_send_json_error(['message' => 'Invalid task.'], 400);
+    }
 
     if (!current_user_can('edit_post', $post_id)) {
         wp_send_json_error(['message' => '❌ Permission denied.', 'post_id' => $post_id]);
     }
 
     if (update_post_meta($post_id, $meta_key, $meta_value)) {
-        error_log("✅ Successfully updated {$meta_key} to {$meta_value}");
         wp_send_json_success([
             'message' => '✅ Updated successfully.',
             'post_id' => $post_id,
@@ -384,7 +360,6 @@ public function filter_tasks($query) {
             'meta_value' => $meta_value
         ]);
     } else {
-        error_log("❌ Failed to update {$meta_key}");
         wp_send_json_error([
             'message' => '❌ Failed to update.',
             'post_id' => $post_id,
